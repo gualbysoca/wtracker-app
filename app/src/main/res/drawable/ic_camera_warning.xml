@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="?attr/colorControlNormal">
+    
+    <!-- Camera Body Outline -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M14.12,4l-1.83,-2H7.71L5.88,4H4c-1.1,0 -2,0.9 -2,2v12c0,1.1 0.9,2 2,2h16c1.1,0 2,-0.9 2,-2V6c0,-1.1 -0.9,-2 -2,-2h-5.88zM20,18H4V6h4.05l1.83,-2h4.24l1.83,2H20v12z" />
+        
+    <!-- Exclamation Mark in Center -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M11,8h2v5h-2z M11,14h2v2h-2z" />
+</vector>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Únicamente para recursos XML que se renderizan ANTES de Compose (ventana, splash, ícono).
+        La fuente de verdad de la UI es ui/theme/WTokens.kt; mantener estos valores sincronizados.
+    -->
+    <color name="wt_window_background">#FF0A0F1E</color>
+    <color name="wt_launcher_background">#FF0A0F1E</color>
+    <color name="wt_launcher_accent">#FF5B8CFF</color>
+    <color name="wt_launcher_check">#FF34D399</color>
+    <color name="wt_notification_icon">#FFFFFFFF</color>
+</resources>

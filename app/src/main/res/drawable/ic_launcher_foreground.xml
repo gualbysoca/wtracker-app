@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="2.5"
+        android:scaleY="2.5"
+        android:translateX="24"
+        android:translateY="24">
+        <!-- The Pin -->
+        <path
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="2.5"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+        <!-- The W letter -->
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M 7.3,6.5 L 9.5,14.5 L 12,10 L 14.5,14.5 L 16.7,6.5 L 14.8,6.5 L 13.1,11.5 L 12,8.5 L 10.9,11.5 L 9.2,6.5 Z" />
+    </group>
+</vector>

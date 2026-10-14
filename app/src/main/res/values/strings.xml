@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WTracker Campo</string>
+
+    <!-- Seguimiento de jornada (servicio en primer plano) -->
+    <string name="tracking_channel_name">Seguimiento de jornada</string>
+    <string name="tracking_channel_description">Registra tu ubicación mientras la jornada está activa.</string>
+    <string name="tracking_notification_title">Jornada en curso</string>
+    <string name="tracking_notification_text">Registrando ubicación y tiempos de ruta.</string>
+
+    <!-- Acciones genéricas -->
+    <string name="state_error_title">Algo salió mal</string>
+    <string name="action_retry">Reintentar</string>
+    <string name="action_back">Volver</string>
+    <string name="action_refresh">Actualizar clientes</string>
+    <string name="action_logout">Cerrar sesión</string>
+    <string name="action_summary">Resumen de Ruta</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="action_search">Buscar cliente</string>
+    <string name="action_close_search">Cerrar búsqueda</string>
+    <string name="action_clear_search">Limpiar búsqueda</string>
+    <string name="action_navigate">Ir</string>
+    <string name="action_call">Llamar</string>
+    <string name="action_whatsapp">Escribir</string>
+
+    <!-- Estados de visita -->
+    <string name="status_pending">Pendiente</string>
+    <string name="status_en_route">En ruta</string>
+    <string name="status_visited">Visitado</string>
+    <string name="status_failed">Fallido</string>
+    <string name="status_requires_photo">Requiere foto</string>
+    <string name="status_no_photo">Sin foto</string>
+
+    <!-- Clientes / ruta -->
+    <string name="client_no_address">Sin dirección registrada</string>
+    <string name="client_no_contact">Sin contacto registrado</string>
+    <string name="sync_pending_content_description">Pendiente de sincronizar</string>
+    <string name="banner_offline">Sin conexión. Tus registros se guardan en el equipo.</string>
+    <plurals name="banner_offline_with_pending">
+        <item quantity="one">Sin conexión · %1$d registro se enviará al recuperar señal.</item>
+        <item quantity="other">Sin conexión · %1$d registros se enviarán al recuperar señal.</item>
+    </plurals>
+    <plurals name="banner_syncing">
+        <item quantity="one">Sincronizando %1$d registro…</item>
+        <item quantity="other">Sincronizando %1$d registros…</item>
+    </plurals>
+    <string name="route_title">Hoja de ruta</string>
+    <string name="route_section_clients">Clientes del día</string>
+    <string name="route_loading">Cargando tu ruta…</string>
+    <string name="route_empty_title">Tu ruta no tiene clientes</string>
+    <string name="route_empty_message">Agrega los clientes que vas a visitar hoy para continuar tu ruta.</string>
+    <string name="route_empty_action">Agregar clientes</string>
+    <string name="route_add_clients_action">Agregar</string>
+    <string name="map_fullscreen_open">Ver mapa en pantalla completa</string>
+    <string name="map_fullscreen_close">Cerrar mapa</string>
+    <string name="route_progress_suffix">de %1$d visitas</string>
+    <string name="route_permission_title">Necesitamos tu ubicación</string>
+    <string name="route_permission_message">La ubicación precisa permite ordenar tu ruta, registrar tus visitas y validar las evidencias en campo.</string>
+
+    <!-- Autoactualización -->
+    <string name="update_available_title">Nueva versión disponible</string>
+    <string name="update_version_label">Versión %1$s</string>
+    <string name="update_action">Actualizar</string>
+    <string name="update_downloading">Descargando… %1$d%%</string>
+
+    <!-- Bienvenida -->
+    <string name="welcome_title">¡Bienvenid@ %1$s!</string>
+    <string name="welcome_title_anonymous">¡Bienvenid@!</string>
+    <string name="welcome_message">Selecciona los clientes que vas a visitar hoy para iniciar tu ruta</string>
+    <string name="welcome_add_clients">Agregar Clientes</string>
+
+    <!-- Selector de clientes -->
+    <string name="picker_title_start">Clientes a visitar</string>
+    <string name="picker_title_add">Agregar clientes a la ruta</string>
+    <plurals name="picker_available_count">
+        <item quantity="one">%1$d cliente disponible</item>
+        <item quantity="other">%1$d clientes disponibles</item>
+    </plurals>
+    <plurals name="picker_selected_count">
+        <item quantity="one">%1$d cliente seleccionado</item>
+        <item quantity="other">%1$d clientes seleccionados</item>
+    </plurals>
+    <string name="picker_search_label">Buscar por nombre, dirección o contacto</string>
+    <string name="picker_action_start">Iniciar ruta</string>
+    <string name="picker_action_add">Agregar a la ruta</string>
+    <string name="picker_loading">Cargando clientes…</string>
+    <string name="picker_empty_title">Sin clientes disponibles</string>
+    <string name="picker_empty_message">No hay clientes para mostrar. Desliza hacia abajo para actualizar.</string>
+    <string name="picker_add_empty_message">Todos tus clientes ya están en la ruta de hoy.</string>
+    <string name="picker_no_results_title">Sin resultados</string>
+    <string name="picker_no_results_message">Ningún cliente coincide con «%1$s».</string>
+    <string name="client_selected_description">Seleccionado</string>
+    <string name="client_not_selected_description">No seleccionado</string>
+
+    <!-- Inicio / fin de ruta -->
+    <string name="route_start_dialog_title">¿Listo para comenzar tu ruta de hoy?</string>
+    <string name="route_start_dialog_date">Fecha</string>
+    <string name="route_start_dialog_time">Hora de inicio</string>
+    <string name="route_start_dialog_clients">Clientes a visitar</string>
+    <string name="route_start_confirm">Iniciar Ruta</string>
+    <string name="route_finish_action">Finalizar Ruta</string>
+    <string name="route_remove_client_description">Quitar de la ruta</string>
+    <string name="route_finish_dialog_title">¿Seguro que quieres finalizar la ruta?</string>
+    <plurals name="route_finish_pending_message">
+        <item quantity="one">Aún tienes %1$d cliente pendiente por visitar.</item>
+        <item quantity="other">Aún tienes %1$d clientes pendientes por visitar.</item>
+    </plurals>
+    <string name="route_finish_failed_warning">Si cierras la ruta sin completar todas las visitas, las visitas que no hayan sido completadas serán marcadas como «Fallidas».</string>
+    <string name="route_finish_all_done_message">Completaste todas las visitas de hoy. Al finalizar se cerrará tu jornada.</string>
+    <string name="route_logout_dialog_title">¿Seguro que quieres cerrar sesión?</string>
+    <string name="route_logout_closes_route_message">Cerrar sesión finalizará tu ruta de hoy.</string>
+
+    <!-- Jornada -->
+    <string name="shift_active_title">Jornada activa</string>
+    <string name="shift_inactive_title">Jornada no iniciada</string>
+    <string name="shift_elapsed">Tiempo en ruta: %1$s</string>
+    <string name="shift_inactive_message">Inicia tu ruta para registrar tiempos, recorrido y paradas.</string>
+    <string name="stop_ongoing">en curso</string>
+
+    <!-- Permisos -->
+    <string name="permission_open_settings">Abrir ajustes</string>
+    <string name="permission_grant">Conceder permiso</string>
+
+    <!-- Login -->
+    <string name="login_title">Bienvenido</string>
+    <string name="login_subtitle">Ingresa con tu cuenta de WTracker para iniciar tu jornada en campo.</string>
+    <string name="login_email_label">Correo electrónico</string>
+    <string name="login_password_label">Contraseña</string>
+    <string name="login_show_password">Mostrar contraseña</string>
+    <string name="login_hide_password">Ocultar contraseña</string>
+    <string name="login_submit">Ingresar</string>
+    <string name="login_footer">Las evidencias se capturan sólo desde la cámara de la app.</string>
+    <string name="app_start_loading">Preparando tu jornada…</string>
+
+    <!-- Registro de visita -->
+    <string name="visit_title">Registrar visita</string>
+    <string name="visit_loading">Cargando cliente…</string>
+    <string name="visit_client_missing_title">Cliente no disponible</string>
+    <string name="visit_client_missing_message">Este cliente ya no está en tu hoja de ruta. Actualiza la lista e inténtalo de nuevo.</string>
+    <string name="visit_section_status">Estado de la visita</string>
+    <string name="visit_section_evidence">Evidencia fotográfica</string>
+    <string name="visit_section_notes">Observaciones</string>
+    <string name="visit_evidence_required_hint">Para marcar como visitado o fallido debes tomar una foto en el lugar.</string>
+    <string name="visit_evidence_optional_hint">El estado \"en ruta\" no requiere foto.</string>
+    <string name="visit_take_photo">Tomar foto</string>
+    <string name="visit_notes_label">Notas (opcional)</string>
+    <string name="visit_notes_counter">%1$d/%2$d</string>
+    <string name="visit_submit">Registrar estado</string>
+    <string name="visit_select_status_hint">Selecciona un estado para continuar.</string>
+    <string name="visit_evidence_out_of_range">La ubicación de la imagen no coincide geográficamente con la ubicación del cliente.\n\n¿Estás seguro de que deseas registrar la visita de todas formas?</string>
+
+    <!-- Cámara -->
+    <string name="camera_title">Foto de evidencia</string>
+    <string name="camera_permission_title">Cámara y ubicación requeridas</string>
+    <string name="camera_permission_message">La evidencia sólo puede tomarse con la cámara de la app y se sella con tu ubicación y la hora exacta.</string>
+    <string name="camera_shutter_description">Tomar foto</string>
+    <string name="camera_gps_searching">Buscando GPS…</string>
+    <string name="camera_gps_mock">Ubicación simulada detectada</string>
+    <string name="camera_gps_accuracy">GPS ±%1$d m</string>
+    <string name="camera_gps_weak">GPS débil ±%1$d m</string>
+    <string name="camera_hint">Encuadra la fachada o el producto. No se permite usar fotos de la galería.</string>
+    <string name="camera_review_title">Revisa la evidencia</string>
+    <string name="camera_review_hint">La foto no puede editarse. Si no es clara, vuelve a tomarla.</string>
+    <string name="camera_confirm">Usar foto</string>
+    <string name="camera_failure_title">No se pudo capturar la evidencia</string>
+    <string name="camera_processing">Sellando ubicación y hora…</string>
+
+    <!-- Evidencia -->
+    <string name="evidence_image_description">Foto de evidencia sellada</string>
+    <string name="evidence_remove">Quitar</string>
+    <string name="evidence_retake">Repetir</string>
+    <string name="evidence_verified_label">Captura verificada en la app</string>
+
+    <!-- Resumen de jornada -->
+    <string name="summary_title">Resumen de Ruta</string>
+    <string name="summary_loading">Calculando resumen…</string>
+    <string name="summary_empty_title">Sin jornada hoy</string>
+    <string name="summary_empty_message">Inicia tu ruta para ver tiempos, recorrido y paradas.</string>
+    <string name="summary_status_active">En curso desde %1$s</string>
+    <string name="summary_status_closed">Jornada %1$s – %2$s</string>
+    <string name="summary_metric_elapsed">Tiempo en ruta</string>
+    <string name="summary_metric_distance">Distancia recorrida</string>
+    <string name="summary_metric_visited">Visitados</string>
+    <string name="summary_metric_failed">Fallidas</string>
+    <string name="summary_metric_total_tasks">Total tareas</string>
+    <string name="summary_metric_en_route">En ruta</string>
+    <string name="summary_metric_pending_sync">Por sincronizar</string>
+    <string name="summary_metric_pings">Puntos GPS</string>
+    <string name="summary_metric_out_of_range_evidence">Evidencias observadas</string>
+    <string name="summary_metric_stopped">Tiempo de inactividad</string>
+    
+    <string name="summary_tooltip_elapsed">Tiempo total transcurrido desde que se inició la jornada.</string>
+    <string name="summary_tooltip_distance">Distancia total aproximada recorrida durante la jornada.</string>
+    <string name="summary_tooltip_visited">Cantidad de visitas marcadas como completadas exitosamente.</string>
+    <string name="summary_tooltip_failed">Cantidad de visitas marcadas como fallidas.</string>
+    <string name="summary_tooltip_total_tasks">Cantidad total de tareas asignadas para la jornada.</string>
+    <string name="summary_tooltip_out_of_range">Evidencias fotográficas tomadas fuera del rango geográfico permitido.</string>
+    <string name="summary_tooltip_stopped">Suma del tiempo estático. Una parada inicia a los 5 min en un radio de 60m. A los 20 min se considera inactividad. El cronómetro se detiene al salir del radio.</string>
+
+    <string name="summary_section_stops">Paradas e inactividad</string>
+    <string name="summary_stops_empty">No se registraron paradas prolongadas.</string>
+</resources>
