@@ -1,7 +1,7 @@
 {
-  "versionCode": 2,
-  "versionName": "1.0.1",
-  "apk": "wtracker-1.0.1.apk",
-  "sha256": "a960301f55f112f070f3f99a4de6b4c9e3f621ec1fed3a6cc2bcb52814bc4fd8",
-  "notes": "Notas de la versión"
+  "versionCode": 3,
+  "versionName": "1.0.2",
+  "apk": "wtracker-1.0.2.apk",
+  "sha256": "0c8d0dd71431f44259f636468be65c4a90c0b7a533a083dd4184cc79da5796cc",
+  "notes": "version 2 de prueba"
 }
