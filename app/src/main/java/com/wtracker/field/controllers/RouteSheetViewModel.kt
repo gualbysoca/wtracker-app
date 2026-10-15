@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
 
 data class RouteSheetUiState(
@@ -119,8 +120,15 @@ class RouteSheetViewModel(
         RouteSheetStatusSnapshot(isOnline, isGpsEnabled, pendingCount, activeShift?.startedAtMillis, nowMillis)
     }
 
+    /**
+     * Flujo compartido de clientes de la ruta activa. Centraliza una sola suscripción a la base
+     * de datos para evitar queries duplicadas desde [stopsFlow], [uiState] y el bloque [init].
+     */
+    private val routeClientsFlow = routePlanService.observeRouteClients()
+        .shareIn(viewModelScope, SharingStarted.Eagerly, replay = 1)
+
     private val stopsFlow = combine(
-        routePlanService.observeRouteClients(),
+        routeClientsFlow,
         localState.map { it.userLocation }.distinctUntilChanged()
     ) { clients, location ->
         RouteOptimizer.buildRoute(clients, location)
@@ -133,16 +141,15 @@ class RouteSheetViewModel(
 
     val uiState: StateFlow<RouteSheetUiState> = combine(
         stopsFlow,
-        routePlanService.observeRouteClients(),
         localState,
         statusSnapshot,
         sessionAndSettingsFlow,
-    ) { stops, routeClients, local, status, sessionAndSettings ->
+    ) { stops, local, status, sessionAndSettings ->
         val (session, settings) = sessionAndSettings
         RouteSheetUiState(
             userName = session?.fullName.orEmpty(),
             nowMillis = status.nowMillis,
-            isInitialLoading = routeClients.isEmpty() && !local.hasCompletedFirstLoad,
+            isInitialLoading = stops.isEmpty() && !local.hasCompletedFirstLoad,
             isRefreshing = local.isRefreshing,
             loadErrorMessage = local.loadErrorMessage,
             stops = stops,
@@ -154,7 +161,7 @@ class RouteSheetViewModel(
             isShiftActionInProgress = local.isShiftActionInProgress,
             routeClosureDialogReason = local.routeClosureDialogReason,
             transientMessage = local.transientMessage,
-            showRouteCompletedModal = routeClients.isNotEmpty() && routeClients.all { it.currentStatus.isFinal } && !local.hasShownRouteCompletedModal,
+            showRouteCompletedModal = stops.isNotEmpty() && stops.all { it.client.currentStatus.isFinal } && !local.hasShownRouteCompletedModal,
             suggestedNextClient = local.suggestedNextClient,
             suggestionTitle = local.suggestionTitle,
             earnedBadges = local.earnedBadges,
@@ -166,36 +173,42 @@ class RouteSheetViewModel(
         refreshClients()
         viewModelScope.launch {
             var previousCompletedCount = -1
-            routePlanService.observeRouteClients().collect { clients ->
-                val currentCompletedCount = clients.count { it.currentStatus.isFinal }
-                
-                if (previousCompletedCount != -1 && currentCompletedCount > previousCompletedCount) {
-                    viewModelScope.launch {
+            routeClientsFlow
+                .distinctUntilChanged { old, new ->
+                    // Ignorar cambios de hasPendingSync: solo reaccionar cuando cambian
+                    // los estados de visita o la composición de la ruta.
+                    old.size == new.size &&
+                    old.zip(new).all { (a, b) -> a.id == b.id && a.currentStatus == b.currentStatus }
+                }
+                .collect { clients ->
+                    val currentCompletedCount = clients.count { it.currentStatus.isFinal }
+
+                    if (previousCompletedCount != -1 && currentCompletedCount > previousCompletedCount) {
                         val settings = appPreferencesStore.businessSettingsFlow.first()
                         val status = GamificationEngine.evaluate(clients, timeProvider.nowMillis(), settings)
-                        
-                        val nextUp = RouteOptimizer.buildRoute(clients, localState.value.userLocation).firstOrNull { !it.client.currentStatus.isFinal }
+
+                        val nextUp = RouteOptimizer.buildRoute(clients, localState.value.userLocation)
+                            .firstOrNull { !it.client.currentStatus.isFinal }
                         val (suggestedNextClient, suggestionTitle) = if (nextUp != null && nextUp.client.currentStatus != VisitStatus.EN_ROUTE) {
                             Pair(nextUp.client, status.latestMessage)
                         } else {
                             Pair(null, null)
                         }
 
-                        localState.update { 
+                        localState.update {
                             it.copy(
-                                suggestedNextClient = suggestedNextClient, 
-                                suggestionTitle = suggestionTitle, 
+                                suggestedNextClient = suggestedNextClient,
+                                suggestionTitle = suggestionTitle,
                                 earnedBadges = it.earnedBadges + status.badges
-                            ) 
+                            )
                         }
                     }
+                    previousCompletedCount = currentCompletedCount
+
+                    if (clients.any { !it.currentStatus.isFinal }) {
+                        localState.update { it.copy(hasShownRouteCompletedModal = false) }
+                    }
                 }
-                previousCompletedCount = currentCompletedCount
-                
-                if (clients.any { !it.currentStatus.isFinal }) {
-                    localState.update { it.copy(hasShownRouteCompletedModal = false) }
-                }
-            }
         }
 
         viewModelScope.launch {

@@ -1,7 +1,7 @@
 {
-  "versionCode": 4,
-  "versionName": "1.0.3",
-  "apk": "wtracker-1.0.3.apk",
-  "sha256": "b23c377be5efa7e499ff9b82e0f3aab5533a85999e3d1b43738a4dfcff881fc2",
-  "notes": "varsion final lista para las preubas de campo"
+  "versionCode": 5,
+  "versionName": "1.0.4",
+  "apk": "wtracker-1.0.4.apk",
+  "sha256": "31b30387a24d277c308e142ff0d32ff95182adaf2360c2e85a42f971c7a173c5",
+  "notes": "Fix de estabilizacion de la App"
 }

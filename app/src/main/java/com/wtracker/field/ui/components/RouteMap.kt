@@ -35,6 +35,7 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Overlay
 import org.osmdroid.views.overlay.Polyline
 import org.osmdroid.views.overlay.TilesOverlay
 import org.osmdroid.views.overlay.infowindow.MarkerInfoWindow
@@ -119,13 +120,14 @@ fun RouteMap(
                 view.invalidate()
             }
 
-            val stopsChanged = stops !== viewportState.lastStops && stops != viewportState.lastStops
+            val renderSignature = stops.map { it.toRenderSignature() }
+            val stopsChanged = renderSignature != viewportState.lastRenderSignature
             val locationChanged = userLocation != viewportState.lastUserLocation
-            val stylesChanged = statusStyles !== viewportState.lastStatusStyles
+            val stylesChanged = statusStyles != viewportState.lastStatusStyles
 
             if (stopsChanged || locationChanged || stylesChanged) {
                 renderRoute(view, stops, userLocation, statusStyles, userMarkerStyle, routeLineArgb, routeLineWidthPx, mapState.badgeCache)
-                viewportState.lastStops = stops
+                viewportState.lastRenderSignature = renderSignature
                 viewportState.lastUserLocation = userLocation
                 viewportState.lastStatusStyles = statusStyles
                 fitViewportOnce(view, stops, userLocation, viewportState)
@@ -136,7 +138,7 @@ fun RouteMap(
 
 internal class MapViewportState {
     var hasFittedToContent: Boolean = false
-    var lastStops: List<RouteStop>? = null
+    var lastRenderSignature: List<StopRenderSignature>? = null
     var lastUserLocation: GeoCoordinate? = null
     var lastStatusStyles: Map<String, MapMarkerStyle>? = null
     var lastIsLightMode: Boolean? = null
@@ -157,6 +159,16 @@ private fun createMapView(context: Context, isLightMode: Boolean): MapView = Map
     }
 }
 
+/** Solo los campos que afectan al dibujo del mapa; ignora flags de sincronización. */
+internal data class StopRenderSignature(
+    val clientId: String,
+    val order: Int,
+    val status: VisitStatus,
+    val coordinate: GeoCoordinate?,
+)
+
+private fun RouteStop.toRenderSignature() = StopRenderSignature(client.id, order, client.currentStatus, client.coordinate)
+
 private fun renderRoute(
     mapView: MapView,
     stops: List<RouteStop>,
@@ -167,14 +179,14 @@ private fun renderRoute(
     routeLineWidthPx: Float,
     badgeCache: MutableMap<String, BitmapDrawable>,
 ) {
-    mapView.overlays.clear()
+    val newOverlays = mutableListOf<Overlay>()
     val openStopPoints = stops
         .filterNot { it.client.currentStatus.isFinal }
         .mapNotNull { it.client.coordinate?.toGeoPoint() }
 
     val routePath = listOfNotNull(userLocation?.toGeoPoint()) + openStopPoints
     if (routePath.size > 1) {
-        mapView.overlays.add(
+        newOverlays.add(
             Polyline(mapView).apply {
                 setPoints(routePath)
                 outlinePaint.color = routeLineArgb
@@ -187,7 +199,7 @@ private fun renderRoute(
     stops.forEach { stop ->
         val coordinate = stop.client.coordinate ?: return@forEach
         val style = statusStyles[stop.client.id] ?: return@forEach
-        mapView.overlays.add(
+        newOverlays.add(
             Marker(mapView).apply {
                 position = coordinate.toGeoPoint()
                 title = stop.client.businessName
@@ -199,7 +211,7 @@ private fun renderRoute(
     }
 
     userLocation?.let { location ->
-        mapView.overlays.add(
+        newOverlays.add(
             Marker(mapView).apply {
                 position = location.toGeoPoint()
                 icon = buildIconBadgeDrawable(mapView.context, com.wtracker.field.R.drawable.ic_person, userMarkerStyle, badgeCache)
@@ -207,6 +219,11 @@ private fun renderRoute(
                 setInfoWindow(null as MarkerInfoWindow?)
             },
         )
+    }
+    // Reemplazo en un solo paso: minimiza la ventana en que el hilo de render ve la lista mutando.
+    synchronized(mapView.overlays) {
+        mapView.overlays.clear()
+        mapView.overlays.addAll(newOverlays)
     }
     mapView.invalidate()
 }
