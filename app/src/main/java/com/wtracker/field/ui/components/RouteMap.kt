@@ -27,6 +27,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.wtracker.field.configs.MapConfig
 import com.wtracker.field.services.models.GeoCoordinate
 import com.wtracker.field.services.models.RouteStop
+import com.wtracker.field.services.models.VisitStatus
 import com.wtracker.field.ui.theme.WTheme
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.BoundingBox
@@ -39,16 +40,54 @@ import org.osmdroid.views.overlay.TilesOverlay
 import org.osmdroid.views.overlay.infowindow.MarkerInfoWindow
 
 /** Datos ya resueltos para pintar un marcador (colores calculados desde los tokens). */
-private data class MapMarkerStyle(val fillArgb: Int, val textArgb: Int, val sizePx: Int, val textSizePx: Float)
+internal data class MapMarkerStyle(val fillArgb: Int, val textArgb: Int, val sizePx: Int, val textSizePx: Float)
+
+/**
+ * Instancia del mapa con su estado asociado. Debe vivir FUERA de los items de un LazyColumn:
+ * si se crea dentro, cada vez que el item sale del viewport se destruye y al volver se
+ * reconstruye (costoso en el hilo principal), lo que provoca ANR al hacer scroll repetido.
+ */
+class RouteMapState internal constructor(internal val mapView: MapView) {
+    internal val viewport = MapViewportState()
+    internal val badgeCache = mutableMapOf<String, BitmapDrawable>()
+}
+
+@Composable
+fun rememberRouteMapState(isLightMode: Boolean): RouteMapState {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val state = remember { RouteMapState(createMapView(context, isLightMode)) }
+
+    DisposableEffect(lifecycleOwner, state) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> state.mapView.onResume()
+                Lifecycle.Event.ON_PAUSE -> state.mapView.onPause()
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            state.mapView.onPause()
+            state.mapView.onDetach()
+        }
+    }
+    return state
+}
 
 /**
  * Wrapper del mapa: es el ÚNICO archivo de UI que conoce osmdroid. Cambiar a Google Maps
  * u otro proveedor sólo requiere reimplementar este composable.
  */
 @Composable
-fun RouteMap(stops: List<RouteStop>, userLocation: GeoCoordinate?, modifier: Modifier = Modifier, isLightMode: Boolean = false) {
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
+fun RouteMap(
+    stops: List<RouteStop>,
+    userLocation: GeoCoordinate?,
+    modifier: Modifier = Modifier,
+    isLightMode: Boolean = false,
+    mapState: RouteMapState = rememberRouteMapState(isLightMode),
+) {
     val colors = WTheme.colors
     val density = LocalDensity.current
     val shape = RoundedCornerShape(WTheme.radius.lg)
@@ -57,60 +96,50 @@ fun RouteMap(stops: List<RouteStop>, userLocation: GeoCoordinate?, modifier: Mod
     val markerTextSizePx = with(density) { WTheme.typography.label.fontSize.toPx() }
     val routeLineWidthPx = with(density) { WTheme.sizes.borderThick.toPx() * 2 }
     val routeLineArgb = colors.accent.toArgb()
-    val userMarkerStyle = MapMarkerStyle(colors.brandGradientEnd.toArgb(), colors.accentContent.toArgb(), markerSizePx, markerTextSizePx)
-    val statusStyles = stops.associate { stop ->
-        stop.client.id to MapMarkerStyle(stop.client.currentStatus.toneColor().toArgb(), colors.background.toArgb(), markerSizePx, markerTextSizePx)
+    val userMarkerStyle = remember(colors, markerSizePx, markerTextSizePx) {
+        MapMarkerStyle(colors.brandGradientEnd.toArgb(), colors.accentContent.toArgb(), markerSizePx, markerTextSizePx)
     }
-
-    val mapView = remember { createMapView(context, isLightMode) }
-    val viewportState = remember { MapViewportState() }
-    val badgeCache = remember { mutableMapOf<String, BitmapDrawable>() }
-
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_RESUME -> mapView.onResume()
-                Lifecycle.Event.ON_PAUSE -> mapView.onPause()
-                else -> Unit
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
+    val toneArgbByStatus = VisitStatus.entries.associateWith { it.toneColor().toArgb() }
+    val statusStyles = remember(stops, colors, markerSizePx, markerTextSizePx) {
+        stops.associate { stop ->
+            stop.client.id to MapMarkerStyle(toneArgbByStatus.getValue(stop.client.currentStatus), colors.background.toArgb(), markerSizePx, markerTextSizePx)
         }
     }
+    val viewportState = mapState.viewport
 
     AndroidView(
-        factory = { mapView },
+        factory = { mapState.mapView },
         modifier = modifier
             .clip(shape)
             .border(WTheme.sizes.borderThin, colors.border, shape),
         update = { view ->
-            val filter = if (isLightMode) null else TilesOverlay.INVERT_COLORS
-            view.overlayManager.tilesOverlay.setColorFilter(filter)
-            view.invalidate()
+            if (viewportState.lastIsLightMode != isLightMode) {
+                view.overlayManager.tilesOverlay.setColorFilter(if (isLightMode) null else TilesOverlay.INVERT_COLORS)
+                viewportState.lastIsLightMode = isLightMode
+                view.invalidate()
+            }
 
-            val stopsHash = stops.hashCode()
+            val stopsChanged = stops !== viewportState.lastStops && stops != viewportState.lastStops
             val locationChanged = userLocation != viewportState.lastUserLocation
-            val stopsChanged = stopsHash != viewportState.lastStopsHash
+            val stylesChanged = statusStyles !== viewportState.lastStatusStyles
 
-            if (stopsChanged || locationChanged) {
-                renderRoute(view, stops, userLocation, statusStyles, userMarkerStyle, routeLineArgb, routeLineWidthPx, badgeCache)
-                viewportState.lastStopsHash = stopsHash
+            if (stopsChanged || locationChanged || stylesChanged) {
+                renderRoute(view, stops, userLocation, statusStyles, userMarkerStyle, routeLineArgb, routeLineWidthPx, mapState.badgeCache)
+                viewportState.lastStops = stops
                 viewportState.lastUserLocation = userLocation
+                viewportState.lastStatusStyles = statusStyles
                 fitViewportOnce(view, stops, userLocation, viewportState)
             }
         },
-        onRelease = { view ->
-            view.onDetach()
-        }
     )
 }
 
-private class MapViewportState {
+internal class MapViewportState {
     var hasFittedToContent: Boolean = false
-    var lastStopsHash: Int = 0
+    var lastStops: List<RouteStop>? = null
     var lastUserLocation: GeoCoordinate? = null
+    var lastStatusStyles: Map<String, MapMarkerStyle>? = null
+    var lastIsLightMode: Boolean? = null
 }
 
 private fun createMapView(context: Context, isLightMode: Boolean): MapView = MapView(context).apply {

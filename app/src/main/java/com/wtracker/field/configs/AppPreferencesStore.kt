@@ -41,6 +41,17 @@ class AppPreferencesStore(context: Context) {
         dataStore.edit { preferences -> preferences[KEY_LAST_SEEN_SUMMARY_ID] = summaryId }
     }
 
+    /** Id de la ruta en la que ya se mostró el aviso de la Tortuga, para no repetirlo. */
+    val snailNotifiedShiftIdFlow: Flow<String?> = dataStore.data
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences()) else throw exception
+        }
+        .map { preferences -> preferences[KEY_SNAIL_NOTIFIED_SHIFT_ID] }
+
+    suspend fun setSnailNotifiedShiftId(shiftId: String) {
+        dataStore.edit { preferences -> preferences[KEY_SNAIL_NOTIFIED_SHIFT_ID] = shiftId }
+    }
+
     val businessSettingsFlow: Flow<BusinessSettings> = dataStore.data
         .catch { exception ->
             if (exception is IOException) emit(emptyPreferences()) else throw exception
@@ -76,6 +87,7 @@ class AppPreferencesStore(context: Context) {
     companion object {
         private val KEY_IS_LIGHT_MODE = booleanPreferencesKey("is_light_mode")
         private val KEY_LAST_SEEN_SUMMARY_ID = stringPreferencesKey("last_seen_summary_id")
+        private val KEY_SNAIL_NOTIFIED_SHIFT_ID = stringPreferencesKey("snail_notified_shift_id")
         private val KEY_BUSINESS_SETTINGS = stringPreferencesKey("business_settings")
     }
 }

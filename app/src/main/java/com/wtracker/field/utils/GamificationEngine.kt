@@ -138,9 +138,22 @@ object GamificationEngine {
         if (summary.failedCount >= settings.gamificationBlackCloud) {
             badges.add(GamificationBadge.UNLUCKY)
         }
-        if (summary.totalStoppedMillis(nowMillis) > settings.gamificationTurtle * 60 * 1000L) {
+        if (snailLevel(summary, nowMillis, settings) >= 1) {
             badges.add(GamificationBadge.SNAIL)
         }
         return badges.toList()
+    }
+
+    /**
+     * Veces que la inactividad acumulada de la ruta alcanzó el umbral de la Tortuga:
+     * 1 = primera vez (se avisa), 2 = el doble del umbral (x2), etc. 0 si aún no la gana.
+     */
+    fun snailLevel(summary: com.wtracker.field.services.models.ShiftSummary, nowMillis: Long, settings: BusinessSettings): Int {
+        if (!settings.gamificationEnabled) return 0
+        val thresholdMillis = settings.gamificationTurtle * 60 * 1000L
+        if (thresholdMillis <= 0L) return 0
+        val stoppedMillis = summary.totalStoppedMillis(nowMillis)
+        if (stoppedMillis <= thresholdMillis) return 0
+        return (stoppedMillis / thresholdMillis).toInt().coerceAtLeast(1)
     }
 }

@@ -79,6 +79,8 @@ import com.wtracker.field.ui.components.LoadingState
 import com.wtracker.field.ui.components.PermissionGate
 import com.wtracker.field.ui.components.RouteClosureDialog
 import com.wtracker.field.ui.components.RouteMap
+import com.wtracker.field.ui.components.RouteMapState
+import com.wtracker.field.ui.components.rememberRouteMapState
 import com.wtracker.field.ui.components.RouteProgressHeader
 import com.wtracker.field.ui.components.SectionHeader
 import com.wtracker.field.ui.components.ShiftControlCard
@@ -253,7 +255,8 @@ fun RouteSheetScreen(uiState: RouteSheetUiState, updateState: UpdateUiState, isL
                         Text(GamificationEngine.getBadgeDescription(badge, uiState.businessSettings), style = WTheme.typography.body, color = WTheme.colors.textSecondary, textAlign = TextAlign.Center)
                         Spacer(modifier = Modifier.height(WTheme.spacing.sm))
                     }
-                    WButton(text = "¡Genial!", onClick = actions.onBadgesAcknowledged, modifier = Modifier.fillMaxWidth())
+                    val acknowledgeLabel = if (uiState.earnedBadges.any { !it.isPositive() }) "Entendido" else "¡Genial!"
+                    WButton(text = acknowledgeLabel, onClick = actions.onBadgesAcknowledged, modifier = Modifier.fillMaxWidth())
                 }
             }
         }
@@ -349,6 +352,7 @@ private fun RouteSheetBody(
     onOpenFullScreenMap: () -> Unit,
 ) {
     val spacing = WTheme.spacing
+    val mapState = rememberRouteMapState(isLightMode)
     // El contenido siempre es una lista desplazable para que el gesto "pull to refresh" funcione en todos los estados.
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -373,7 +377,7 @@ private fun RouteSheetBody(
         item(key = "shift") {
             ShiftControlCard(activeShiftStartedAtMillis = uiState.activeShiftStartedAtMillis, nowMillis = uiState.nowMillis)
         }
-        routeContent(uiState = uiState, actions = actions, isLightMode = isLightMode, onOpenFullScreenMap = onOpenFullScreenMap)
+        routeContent(uiState = uiState, actions = actions, isLightMode = isLightMode, mapState = mapState, onOpenFullScreenMap = onOpenFullScreenMap)
         item(key = "finish_route") {
             FinishRouteButton(
                 isBusy = uiState.isShiftActionInProgress,
@@ -384,7 +388,7 @@ private fun RouteSheetBody(
     }
 }
 
-private fun LazyListScope.routeContent(uiState: RouteSheetUiState, actions: RouteSheetActions, isLightMode: Boolean, onOpenFullScreenMap: () -> Unit) {
+private fun LazyListScope.routeContent(uiState: RouteSheetUiState, actions: RouteSheetActions, isLightMode: Boolean, mapState: RouteMapState, onOpenFullScreenMap: () -> Unit) {
     if (uiState.isInitialLoading) {
         item(key = "loading") { RouteStateContainer { LoadingState(message = stringResource(R.string.route_loading)) } }
         return
@@ -422,6 +426,7 @@ private fun LazyListScope.routeContent(uiState: RouteSheetUiState, actions: Rout
                     .fillMaxSize()
                     .clip(RoundedCornerShape(WTheme.radius.lg)),
                 isLightMode = isLightMode,
+                mapState = mapState,
             )
             IconButton(
                 onClick = onOpenFullScreenMap,

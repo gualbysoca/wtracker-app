@@ -161,7 +161,11 @@ fun ShiftSummaryScreen(uiState: ShiftSummaryUiState, onBack: () -> Unit) {
             GamificationEngine.evaluateSummary(summary, uiState.nowMillis, uiState.businessSettings)
         }
 
-        ShiftSummaryContent(summary = summary, uiState = uiState, zone = zone, badges = badges, modifier = contentModifier)
+        val snailCount = remember(summary, uiState.nowMillis, uiState.businessSettings) {
+            GamificationEngine.snailLevel(summary, uiState.nowMillis, uiState.businessSettings)
+        }
+
+        ShiftSummaryContent(summary = summary, uiState = uiState, zone = zone, badges = badges, snailCount = snailCount, modifier = contentModifier)
     }
 }
 
@@ -173,7 +177,7 @@ private fun shiftRangeLabel(summary: ShiftSummary, zone: ZoneId): String {
 }
 
 @Composable
-private fun ShiftSummaryContent(summary: ShiftSummary, uiState: ShiftSummaryUiState, zone: ZoneId, badges: List<GamificationBadge>, modifier: Modifier) {
+private fun ShiftSummaryContent(summary: ShiftSummary, uiState: ShiftSummaryUiState, zone: ZoneId, badges: List<GamificationBadge>, snailCount: Int, modifier: Modifier) {
     val spacing = WTheme.spacing
     val metrics = buildMetrics(summary, uiState.nowMillis)
     var selectedBadge by remember { mutableStateOf<Pair<GamificationBadge, ImageVector>?>(null) }
@@ -198,7 +202,11 @@ private fun ShiftSummaryContent(summary: ShiftSummary, uiState: ShiftSummaryUiSt
                         val badgeIcon = badge.getIcon()
                         androidx.compose.material3.AssistChip(
                             onClick = { selectedBadge = badge to badgeIcon },
-                            label = { Text(GamificationEngine.getBadgeLabel(badge)) },
+                            label = {
+                                val repeatCount = if (badge == GamificationBadge.SNAIL) snailCount else 1
+                                val suffix = if (repeatCount > 1) " x$repeatCount" else ""
+                                Text(GamificationEngine.getBadgeLabel(badge) + suffix)
+                            },
                             leadingIcon = {
                                 Icon(
                                     imageVector = badgeIcon,

@@ -83,7 +83,6 @@ private data class RouteSheetLocalState(
     val suggestedNextClient: FieldClient? = null,
     val suggestionTitle: String? = null,
     val earnedBadges: List<GamificationBadge> = emptyList(),
-    val hasNotifiedSnailBadge: Boolean = false,
 )
 
 private data class RouteSheetStatusSnapshot(
@@ -205,19 +204,12 @@ class RouteSheetViewModel(
                 com.wtracker.field.utils.tickerFlow(com.wtracker.field.configs.UiConfig.CLOCK_TICK_MS, timeProvider),
                 appPreferencesStore.businessSettingsFlow,
             ) { summary, nowMillis, settings ->
-                if (summary == null || !settings.gamificationEnabled) return@combine
-                
-                val isSnail = summary.totalStoppedMillis(nowMillis) > settings.gamificationTurtle * 60 * 1000L
-                val state = localState.value
-                
-                if (isSnail && !state.hasNotifiedSnailBadge) {
-                    localState.update { it.copy(
-                        hasNotifiedSnailBadge = true,
-                        earnedBadges = it.earnedBadges + GamificationBadge.SNAIL
-                    ) }
-                } else if (!isSnail && state.hasNotifiedSnailBadge) {
-                    localState.update { it.copy(hasNotifiedSnailBadge = false) }
-                }
+                if (summary == null) return@combine
+                if (GamificationEngine.snailLevel(summary, nowMillis, settings) < 1) return@combine
+                if (appPreferencesStore.snailNotifiedShiftIdFlow.first() == summary.shiftId) return@combine
+
+                appPreferencesStore.setSnailNotifiedShiftId(summary.shiftId)
+                localState.update { it.copy(earnedBadges = it.earnedBadges + GamificationBadge.SNAIL) }
             }.collect { }
         }
     }
