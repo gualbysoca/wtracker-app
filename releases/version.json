@@ -1,7 +1,7 @@
 {
-  "versionCode": 5,
-  "versionName": "1.0.4",
-  "apk": "wtracker-1.0.4.apk",
-  "sha256": "31b30387a24d277c308e142ff0d32ff95182adaf2360c2e85a42f971c7a173c5",
-  "notes": "Fix de estabilizacion de la App"
+  "versionCode": 6,
+  "versionName": "1.0.5",
+  "apk": "wtracker-1.0.5.apk",
+  "sha256": "90ae65083295e441d7593d144b8441e3607ecd9997f781d60e6e28750c845533",
+  "notes": "Fix del mapa de la App"
 }

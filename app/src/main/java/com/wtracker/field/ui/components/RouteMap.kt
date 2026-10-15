@@ -147,6 +147,9 @@ internal class MapViewportState {
 private fun createMapView(context: Context, isLightMode: Boolean): MapView = MapView(context).apply {
     setTileSource(TileSourceFactory.MAPNIK)
     setMultiTouchControls(true)
+    // Al hacer scroll el LazyColumn desacopla la vista; sin esto osmdroid libera tiles y capas
+    // y el mapa vuelve vacío. La liberación real se hace en onDispose de rememberRouteMapState.
+    setDestroyMode(false)
     zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
     overlayManager.tilesOverlay.setColorFilter(if (isLightMode) null else TilesOverlay.INVERT_COLORS)
     controller.setZoom(MapConfig.DEFAULT_ZOOM)
