@@ -90,6 +90,7 @@ fun RouteMap(
     mapState: RouteMapState = rememberRouteMapState(isLightMode),
 ) {
     val colors = WTheme.colors
+    val renderedStops = remember(stops) { stops.take(MapConfig.MAX_RENDERED_STOPS) }
     val density = LocalDensity.current
     val shape = RoundedCornerShape(WTheme.radius.lg)
 
@@ -101,15 +102,20 @@ fun RouteMap(
         MapMarkerStyle(colors.brandGradientEnd.toArgb(), colors.accentContent.toArgb(), markerSizePx, markerTextSizePx)
     }
     val toneArgbByStatus = VisitStatus.entries.associateWith { it.toneColor().toArgb() }
-    val statusStyles = remember(stops, colors, markerSizePx, markerTextSizePx) {
-        stops.associate { stop ->
+    val statusStyles = remember(renderedStops, colors, markerSizePx, markerTextSizePx) {
+        renderedStops.associate { stop ->
             stop.client.id to MapMarkerStyle(toneArgbByStatus.getValue(stop.client.currentStatus), colors.background.toArgb(), markerSizePx, markerTextSizePx)
         }
     }
     val viewportState = mapState.viewport
+    val renderSignature = remember(renderedStops) { renderedStops.map { it.toRenderSignature() } }
 
     AndroidView(
-        factory = { mapState.mapView },
+        factory = {
+            // Si la vista aún cuelga de un contenedor anterior (reciclaje del LazyColumn), addView fallaría.
+            (mapState.mapView.parent as? android.view.ViewGroup)?.removeView(mapState.mapView)
+            mapState.mapView
+        },
         modifier = modifier
             .clip(shape)
             .border(WTheme.sizes.borderThin, colors.border, shape),
@@ -120,17 +126,16 @@ fun RouteMap(
                 view.invalidate()
             }
 
-            val renderSignature = stops.map { it.toRenderSignature() }
             val stopsChanged = renderSignature != viewportState.lastRenderSignature
             val locationChanged = userLocation != viewportState.lastUserLocation
             val stylesChanged = statusStyles != viewportState.lastStatusStyles
 
             if (stopsChanged || locationChanged || stylesChanged) {
-                renderRoute(view, stops, userLocation, statusStyles, userMarkerStyle, routeLineArgb, routeLineWidthPx, mapState.badgeCache)
+                renderRoute(view, renderedStops, userLocation, statusStyles, userMarkerStyle, routeLineArgb, routeLineWidthPx, mapState.badgeCache)
                 viewportState.lastRenderSignature = renderSignature
                 viewportState.lastUserLocation = userLocation
                 viewportState.lastStatusStyles = statusStyles
-                fitViewportOnce(view, stops, userLocation, viewportState)
+                fitViewportOnce(view, renderedStops, userLocation, viewportState)
             }
         },
     )
@@ -172,6 +177,13 @@ internal data class StopRenderSignature(
 
 private fun RouteStop.toRenderSignature() = StopRenderSignature(client.id, order, client.currentStatus, client.coordinate)
 
+/** Coordenadas fuera de rango o no finitas hacen que osmdroid itere sin fin en el hilo principal. */
+private fun GeoCoordinate.isPlottable(): Boolean =
+    latitude.isFinite() && longitude.isFinite() &&
+        latitude in -MapConfig.MAX_LATITUDE..MapConfig.MAX_LATITUDE &&
+        longitude in -MapConfig.MAX_LONGITUDE..MapConfig.MAX_LONGITUDE &&
+        !(latitude == 0.0 && longitude == 0.0)
+
 private fun renderRoute(
     mapView: MapView,
     stops: List<RouteStop>,
@@ -185,7 +197,7 @@ private fun renderRoute(
     val newOverlays = mutableListOf<Overlay>()
     val openStopPoints = stops
         .filterNot { it.client.currentStatus.isFinal }
-        .mapNotNull { it.client.coordinate?.toGeoPoint() }
+        .mapNotNull { it.client.coordinate?.takeIf { coordinate -> coordinate.isPlottable() }?.toGeoPoint() }
 
     val routePath = listOfNotNull(userLocation?.toGeoPoint()) + openStopPoints
     if (routePath.size > 1) {
@@ -200,7 +212,7 @@ private fun renderRoute(
     }
 
     stops.forEach { stop ->
-        val coordinate = stop.client.coordinate ?: return@forEach
+        val coordinate = stop.client.coordinate?.takeIf { it.isPlottable() } ?: return@forEach
         val style = statusStyles[stop.client.id] ?: return@forEach
         newOverlays.add(
             Marker(mapView).apply {
@@ -213,7 +225,7 @@ private fun renderRoute(
         )
     }
 
-    userLocation?.let { location ->
+    userLocation?.takeIf { it.isPlottable() }?.let { location ->
         newOverlays.add(
             Marker(mapView).apply {
                 position = location.toGeoPoint()
@@ -238,12 +250,18 @@ private fun fitViewportOnce(
     viewportState: MapViewportState,
 ) {
     if (viewportState.hasFittedToContent) return
-    val points = stops.mapNotNull { it.client.coordinate?.toGeoPoint() } + listOfNotNull(userLocation?.toGeoPoint())
+    val points = (stops.mapNotNull { it.client.coordinate } + listOfNotNull(userLocation))
+        .filter { it.isPlottable() }
+        .map { it.toGeoPoint() }
     if (points.isEmpty()) return
 
     viewportState.hasFittedToContent = true
+    val latitudeSpan = points.maxOf { it.latitude } - points.minOf { it.latitude }
+    val longitudeSpan = points.maxOf { it.longitude } - points.minOf { it.longitude }
+    val isDegenerateBox = latitudeSpan < MapConfig.MIN_FIT_SPAN_DEGREES && longitudeSpan < MapConfig.MIN_FIT_SPAN_DEGREES
     mapView.post {
-        if (points.size == 1) {
+        if (isDegenerateBox) {
+            mapView.controller.setZoom(MapConfig.MAX_FIT_ZOOM)
             mapView.controller.setCenter(points.first())
             return@post
         }

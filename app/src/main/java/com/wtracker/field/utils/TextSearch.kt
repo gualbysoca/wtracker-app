@@ -12,9 +12,13 @@ object TextSearch {
     fun normalize(value: String): String =
         Normalizer.normalize(value, Normalizer.Form.NFD).replace(diacriticsRegex, "").lowercase(searchLocale).trim()
 
+    private val whitespaceRegex = Regex("\\s+")
+
+    /** Cada palabra de la consulta debe aparecer en algún campo; el orden de las palabras no importa. */
     fun matches(query: String, vararg fields: String?): Boolean {
-        val normalizedQuery = normalize(query)
-        if (normalizedQuery.isEmpty()) return true
-        return fields.any { field -> field != null && normalize(field).contains(normalizedQuery) }
+        val queryTokens = normalize(query).split(whitespaceRegex).filter { it.isNotEmpty() }
+        if (queryTokens.isEmpty()) return true
+        val normalizedFields = fields.filterNotNull().map { normalize(it) }
+        return queryTokens.all { token -> normalizedFields.any { field -> field.contains(token) } }
     }
 }

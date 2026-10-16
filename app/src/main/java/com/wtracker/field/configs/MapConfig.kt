@@ -15,6 +15,16 @@ object MapConfig {
     const val MAX_FIT_ZOOM = 17.0
     const val FIT_PADDING_PX = 96
 
+    /** Máximo de paradas dibujadas en el mapa (las más cercanas en el orden de ruta). */
+    const val MAX_RENDERED_STOPS = 150
+
+    /** Si todos los puntos caben en menos de este rango, se centra con zoom fijo en vez de calcular una caja. */
+    const val MIN_FIT_SPAN_DEGREES = 0.0001
+
+    /** Límites válidos de Web Mercator. */
+    const val MAX_LATITUDE = 85.0
+    const val MAX_LONGITUDE = 180.0
+
     /** Centro por defecto (Santa Cruz de la Sierra, zona de los datos del Backoffice). */
     val DEFAULT_CENTER = GeoCoordinate(latitude = -17.7833, longitude = -63.1821)
 
