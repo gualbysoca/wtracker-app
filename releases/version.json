@@ -1,7 +1,7 @@
 {
-  "versionCode": 7,
-  "versionName": "1.0.6",
-  "apk": "wtracker-1.0.6.apk",
-  "sha256": "435f6f590525a2558f9b92a806a7885bb89ca6306e2ef560c8a95fffdaa41331",
-  "notes": "Errores corregidos"
+  "versionCode": 8,
+  "versionName": "1.0.7",
+  "apk": "wtracker-1.0.7.apk",
+  "sha256": "51fc38f1e90fb930dec82f76f79f3ea2019a93dff295c1cc94d11a18167640ec",
+  "notes": "Nueva version corregida"
 }

@@ -18,8 +18,9 @@ object MapConfig {
     /** Máximo de paradas dibujadas en el mapa (las más cercanas en el orden de ruta). */
     const val MAX_RENDERED_STOPS = 150
 
-    /** Si todos los puntos caben en menos de este rango, se centra con zoom fijo en vez de calcular una caja. */
-    const val MIN_FIT_SPAN_DEGREES = 0.0001
+    /** Zoom mínimo al ajustar el mapa a la ruta y tamaño de tesela del mapa base. */
+    const val MIN_FIT_ZOOM = 3.0
+    const val TILE_SIZE_PX = 256.0
 
     /** Límites válidos de Web Mercator. */
     const val MAX_LATITUDE = 85.0

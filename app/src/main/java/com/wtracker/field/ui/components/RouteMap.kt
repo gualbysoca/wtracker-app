@@ -7,6 +7,12 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
 import android.view.MotionEvent
+import android.view.View
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.ln
+import kotlin.math.log2
+import kotlin.math.tan
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,7 +36,6 @@ import com.wtracker.field.services.models.RouteStop
 import com.wtracker.field.services.models.VisitStatus
 import com.wtracker.field.ui.theme.WTheme
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
-import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
@@ -256,18 +261,56 @@ private fun fitViewportOnce(
     if (points.isEmpty()) return
 
     viewportState.hasFittedToContent = true
-    val latitudeSpan = points.maxOf { it.latitude } - points.minOf { it.latitude }
-    val longitudeSpan = points.maxOf { it.longitude } - points.minOf { it.longitude }
-    val isDegenerateBox = latitudeSpan < MapConfig.MIN_FIT_SPAN_DEGREES && longitudeSpan < MapConfig.MIN_FIT_SPAN_DEGREES
-    mapView.post {
-        if (isDegenerateBox) {
-            mapView.controller.setZoom(MapConfig.MAX_FIT_ZOOM)
-            mapView.controller.setCenter(points.first())
-            return@post
-        }
-        mapView.zoomToBoundingBox(BoundingBox.fromGeoPointsSafe(points), false, MapConfig.FIT_PADDING_PX, MapConfig.MAX_FIT_ZOOM, null)
+    runWhenLaidOut(mapView) {
+        val fit = computeViewportFit(points, mapView.width, mapView.height)
+        mapView.controller.setZoom(fit.zoom)
+        mapView.controller.setCenter(fit.center)
     }
 }
+
+private class ViewportFit(val center: GeoPoint, val zoom: Double)
+
+/**
+ * Cálculo propio de centro y zoom (Web Mercator). Se evita MapView.zoomToBoundingBox porque en
+ * osmdroid puede quedar iterando indefinidamente en el hilo principal y provocar un ANR.
+ */
+private fun computeViewportFit(points: List<GeoPoint>, widthPx: Int, heightPx: Int): ViewportFit {
+    val minLatitude = points.minOf { it.latitude }
+    val maxLatitude = points.maxOf { it.latitude }
+    val minLongitude = points.minOf { it.longitude }
+    val maxLongitude = points.maxOf { it.longitude }
+    val center = GeoPoint((minLatitude + maxLatitude) / 2, (minLongitude + maxLongitude) / 2)
+
+    val usableWidthPx = (widthPx - 2 * MapConfig.FIT_PADDING_PX).coerceAtLeast(1)
+    val usableHeightPx = (heightPx - 2 * MapConfig.FIT_PADDING_PX).coerceAtLeast(1)
+    val longitudeFraction = (maxLongitude - minLongitude) / FULL_LONGITUDE_DEGREES
+    val latitudeFraction = abs(toMercatorY(maxLatitude) - toMercatorY(minLatitude)) / (2 * PI)
+
+    val zoomForWidth = log2(usableWidthPx / MapConfig.TILE_SIZE_PX / longitudeFraction)
+    val zoomForHeight = log2(usableHeightPx / MapConfig.TILE_SIZE_PX / latitudeFraction)
+    val rawZoom = minOf(zoomForWidth, zoomForHeight, MapConfig.MAX_FIT_ZOOM)
+    val zoom = if (rawZoom.isFinite()) rawZoom.coerceAtLeast(MapConfig.MIN_FIT_ZOOM) else MapConfig.MAX_FIT_ZOOM
+    return ViewportFit(center, zoom)
+}
+
+private const val FULL_LONGITUDE_DEGREES = 360.0
+
+private fun toMercatorY(latitudeDegrees: Double): Double = ln(tan(PI / 4 + Math.toRadians(latitudeDegrees) / 2))
+
+private fun runWhenLaidOut(view: View, action: () -> Unit) {
+    if (view.width > 0 && view.height > 0) {
+        view.post(action)
+        return
+    }
+    view.addOnLayoutChangeListener(object : View.OnLayoutChangeListener {
+        override fun onLayoutChange(v: View, l: Int, t: Int, r: Int, b: Int, ol: Int, ot: Int, or: Int, ob: Int) {
+            if (v.width <= 0 || v.height <= 0) return
+            v.removeOnLayoutChangeListener(this)
+            v.post(action)
+        }
+    })
+}
+
 
 private fun buildBadgeDrawable(
     context: Context,
