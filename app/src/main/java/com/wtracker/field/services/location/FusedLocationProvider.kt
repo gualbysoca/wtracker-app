@@ -76,7 +76,7 @@ class FusedLocationProvider(
 
         val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, intervalMillis)
             .setMinUpdateIntervalMillis(intervalMillis / 2)
-            .setWaitForAccurateLocation(true)
+            .setMinUpdateDistanceMeters(LocationConfig.MIN_UPDATE_DISTANCE_METERS)
             .build()
 
         val callback = object : LocationCallback() {

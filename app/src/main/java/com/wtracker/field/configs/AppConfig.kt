@@ -15,6 +15,15 @@ object LocationConfig {
     /** Frecuencia de muestreo GPS durante la jornada (servicio en segundo plano). */
     const val TRACKING_INTERVAL_MS = 15_000L
 
+    /** Desplazamiento mínimo (en metros) para emitir actualización GPS (evita consumo quieto). */
+    const val MIN_UPDATE_DISTANCE_METERS = 10f
+
+    /** Cantidad de pings acumulados antes de sincronizar por red (ahorro de batería en módem celular). */
+    const val LOCATION_SYNC_BATCH_SIZE = 3
+
+    /** Intervalo máximo (ms) para transmitir ubicaciones acumuladas hacia el servidor. */
+    const val LOCATION_SYNC_MAX_INTERVAL_MS = 60_000L
+
     /** Frecuencia de muestreo mientras la cámara está abierta (precalienta el GPS). */
     const val CAMERA_WARMUP_INTERVAL_MS = 2_000L
 

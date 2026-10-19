@@ -1,7 +1,7 @@
 {
-  "versionCode": 8,
-  "versionName": "1.0.7",
-  "apk": "wtracker-1.0.7.apk",
-  "sha256": "51fc38f1e90fb930dec82f76f79f3ea2019a93dff295c1cc94d11a18167640ec",
-  "notes": "Nueva version corregida"
+  "versionCode": 9,
+  "versionName": "1.0.8",
+  "apk": "wtracker-1.0.8.apk",
+  "sha256": "2a96c13516dfb17e41a06ac6a927bb16698132cf9ee4d39827da74dce9ca402f",
+  "notes": "Ahorro de bateria y error Paula arreglados"
 }

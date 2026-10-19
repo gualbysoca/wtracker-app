@@ -5,18 +5,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.runtime.DisposableEffect
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -80,7 +82,9 @@ fun AppNavGraph(container: AppContainer) {
 
     when (val state = appStartState) {
         AppStartState.Loading -> AppSplash()
-        is AppStartState.Ready -> SessionAwareNavHost(container = container, rootDestination = state.rootDestination())
+        is AppStartState.Ready -> key(state.isLoggedIn) {
+            SessionAwareNavHost(container = container, rootDestination = state.rootDestination())
+        }
     }
 }
 
@@ -94,6 +98,7 @@ private fun AppStartState.Ready.rootDestination(): String = when {
 private fun SessionAwareNavHost(container: AppContainer, rootDestination: String) {
     val interDayViewModel: InterDayShiftViewModel = viewModel(factory = ControllerFactories.interDayShift(container))
     val showInterDayModal by interDayViewModel.showModal.collectAsStateWithLifecycle()
+    val isFinishingShift by interDayViewModel.isFinishing.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
 
     DisposableEffect(lifecycleOwner) {
@@ -106,8 +111,15 @@ private fun SessionAwareNavHost(container: AppContainer, rootDestination: String
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    LaunchedEffect(rootDestination) {
+        if (rootDestination == AppDestinations.ROUTE_SHEET) {
+            interDayViewModel.checkShiftStatus()
+        }
+    }
+
     if (showInterDayModal) {
         InterDayShiftModal(
+            isFinishing = isFinishingShift,
             onFinishShift = { interDayViewModel.finishShift() },
             onContinue = { interDayViewModel.dismissModal() }
         )
@@ -117,7 +129,12 @@ private fun SessionAwareNavHost(container: AppContainer, rootDestination: String
     // Se fija sólo en la primera composición: cambiar startDestination reconstruiría el grafo.
     val startDestination = remember { rootDestination }
 
-    LaunchedEffect(rootDestination) { navController.resetTo(rootDestination) }
+    LaunchedEffect(rootDestination) {
+        val currentRoute = navController.currentDestination?.route
+        if (currentRoute != null && currentRoute != rootDestination) {
+            navController.resetTo(rootDestination)
+        }
+    }
 
     NavHost(navController = navController, startDestination = startDestination) {
         composable(AppDestinations.LOGIN) { LoginRoute(container = container) }
@@ -176,7 +193,7 @@ private fun SessionAwareNavHost(container: AppContainer, rootDestination: String
 private fun NavHostController.resetTo(destination: String) {
     if (currentDestination?.route == destination) return
     navigate(destination) {
-        popUpTo(graph.id) { inclusive = true }
+        popUpTo(graph.findStartDestination().id) { inclusive = true }
         launchSingleTop = true
     }
 }
@@ -192,7 +209,7 @@ private fun AppSplash() {
 }
 
 @Composable
-private fun InterDayShiftModal(onFinishShift: () -> Unit, onContinue: () -> Unit) {
+private fun InterDayShiftModal(isFinishing: Boolean, onFinishShift: () -> Unit, onContinue: () -> Unit) {
     WDialog(
         title = "Turno pendiente detectado",
         icon = Icons.Outlined.Flag,
@@ -200,11 +217,12 @@ private fun InterDayShiftModal(onFinishShift: () -> Unit, onContinue: () -> Unit
         confirmText = "Finalizar Jornada (Recomendado)",
         confirmVariant = WButtonVariant.PRIMARY,
         dismissText = "Continuar Ruta",
+        isConfirmLoading = isFinishing,
         onConfirm = onFinishShift,
         onDismiss = onContinue,
     ) {
         Text(
-            text = "Tienes una jornada que inició ayer y no fue cerrada. ¿Deseas finalizarla ahora o continuar con tu ruta actual?",
+            text = "Tienes una jornada que inició en un día anterior y no fue cerrada. ¿Deseas finalizarla ahora o continuar con tu ruta actual?",
             style = WTheme.typography.body,
             color = WTheme.colors.textSecondary,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,

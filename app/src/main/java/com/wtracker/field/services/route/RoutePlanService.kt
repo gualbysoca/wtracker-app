@@ -8,7 +8,9 @@ import com.wtracker.field.services.clients.ClientService
 import com.wtracker.field.services.local.PlannedVisitDao
 import com.wtracker.field.services.local.PlannedVisitEntity
 import com.wtracker.field.services.location.LocationProvider
+import com.wtracker.field.configs.MapConfig
 import com.wtracker.field.services.models.BusinessSettings
+import com.wtracker.field.services.models.CapturedLocation
 import com.wtracker.field.services.models.DailyRoute
 import com.wtracker.field.services.models.FieldClient
 import com.wtracker.field.services.models.RouteClosure
@@ -182,12 +184,18 @@ class RoutePlanService(
 
     private suspend fun registerPendingAsFailed(pendingClientIds: Set<String>): AppResult<Int> {
         val locationResult = locationProvider.getFreshLocation()
-        if (locationResult is AppResult.Failure) {
-            return AppResult.Failure(
-                AppError.Location("No pudimos obtener tu ubicación para cerrar la ruta. Intenta nuevamente en un lugar abierto."),
-            )
+        val location = when (locationResult) {
+            is AppResult.Success -> locationResult.data
+            is AppResult.Failure -> {
+                CapturedLocation(
+                    coordinate = MapConfig.DEFAULT_CENTER,
+                    accuracyMeters = 0f,
+                    isMockLocation = false,
+                    fixTimeMillis = timeProvider.nowMillis(),
+                    capturedAtMillis = timeProvider.nowMillis(),
+                )
+            }
         }
-        val location = (locationResult as AppResult.Success).data
         return visitService.registerRouteClosureFailures(pendingClientIds, location)
     }
 

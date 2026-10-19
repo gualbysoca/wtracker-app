@@ -93,15 +93,26 @@ class ShiftTrackingService : Service() {
             resetStateFlow.collect { detectorState = StopDetectorState.Idle }
         }
 
+        var pingsSinceLastSync = 0
+        var lastLocationSyncMillis = System.currentTimeMillis()
+
         try {
             container.locationProvider
                 .observeLocationUpdates(LocationConfig.TRACKING_INTERVAL_MS)
                 .collect { location ->
                     shiftService.recordLocationPing(activeShift.id, location)
-                    
-                    // Disparamos sincronización en tiempo real para el panel web (SSE)
-                    serviceScope.launch { container.locationSyncService.syncPendingLocations() }
-                    
+                    pingsSinceLastSync++
+
+                    val now = System.currentTimeMillis()
+                    val shouldSync = pingsSinceLastSync >= LocationConfig.LOCATION_SYNC_BATCH_SIZE ||
+                        (now - lastLocationSyncMillis >= LocationConfig.LOCATION_SYNC_MAX_INTERVAL_MS)
+
+                    if (shouldSync) {
+                        pingsSinceLastSync = 0
+                        lastLocationSyncMillis = now
+                        serviceScope.launch { container.locationSyncService.syncPendingLocations() }
+                    }
+
                     val evaluation = StopDetector.evaluate(
                         detectorState,
                         LocationSample(location.coordinate, location.capturedAtMillis, location.accuracyMeters),
@@ -113,6 +124,9 @@ class ShiftTrackingService : Service() {
                             startAutoCheckoutTimer()
                         } else {
                             shiftService.applyStopTransition(activeShift.id, transition)
+                            pingsSinceLastSync = 0
+                            lastLocationSyncMillis = now
+                            serviceScope.launch { container.locationSyncService.syncPendingLocations() }
                         }
                     }
                 }

@@ -19,6 +19,9 @@ class InterDayShiftViewModel(
     private val _showModal = MutableStateFlow(false)
     val showModal: StateFlow<Boolean> = _showModal.asStateFlow()
 
+    private val _isFinishing = MutableStateFlow(false)
+    val isFinishing: StateFlow<Boolean> = _isFinishing.asStateFlow()
+
     fun checkShiftStatus() {
         viewModelScope.launch {
             if (routePlanService.hasActiveRoute()) {
@@ -39,9 +42,15 @@ class InterDayShiftViewModel(
     }
 
     fun finishShift() {
+        if (_isFinishing.value) return
+        _isFinishing.value = true
         viewModelScope.launch {
-            routePlanService.finishRoute()
-            _showModal.value = false
+            try {
+                routePlanService.finishRoute()
+            } finally {
+                _isFinishing.value = false
+                _showModal.value = false
+            }
         }
     }
 
