@@ -79,6 +79,29 @@ data class MobileClientDto(
     @Serializable(with = FlexibleDoubleSerializer::class) val lng: Double? = null,
     @SerialName("last_visit_status") val lastVisitStatus: String? = null,
     @SerialName("last_visit_at") val lastVisitAt: String? = null,
+    @SerialName("client_code") val clientCode: String? = null,
+    @SerialName("delivery_address") val deliveryAddress: String? = null,
+    @SerialName("stall_number") val stallNumber: String? = null,
+)
+
+@Serializable
+data class ClientLocationUpdateDto(
+    val lat: Double,
+    val lng: Double,
+)
+
+@Serializable
+data class UpdateClientRequestDto(
+    @SerialName("business_name") val businessName: String? = null,
+    val mercado: String? = null,
+    @SerialName("contact_name") val contactName: String? = null,
+    val phone: String? = null,
+    val address: String? = null,
+    @SerialName("delivery_address") val deliveryAddress: String? = null,
+    @SerialName("stall_number") val stallNumber: String? = null,
+    @SerialName("client_code") val clientCode: String? = null,
+    val lat: Double? = null,
+    val lng: Double? = null,
 )
 
 /**

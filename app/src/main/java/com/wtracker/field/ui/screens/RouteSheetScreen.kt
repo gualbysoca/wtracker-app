@@ -27,6 +27,7 @@ import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.PersonAddAlt
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -71,6 +72,7 @@ import com.wtracker.field.controllers.UpdateUiState
 import com.wtracker.field.controllers.UpdateViewModel
 import com.wtracker.field.ui.components.UpdateBanner
 import com.wtracker.field.utils.GamificationEngine
+import com.wtracker.field.ui.components.NewClientOrderCard
 import com.wtracker.field.ui.components.ClientRouteCard
 import com.wtracker.field.ui.components.DiagnosticBanner
 import com.wtracker.field.ui.components.EmptyState
@@ -110,6 +112,7 @@ data class RouteSheetActions(
     val onDismissNextClientSuggestion: () -> Unit,
     val onBadgesAcknowledged: () -> Unit,
     val onUpdateClicked: () -> Unit,
+    val onTakeOrderNewClient: () -> Unit,
 )
 
 @Composable
@@ -118,6 +121,7 @@ fun RouteSheetRoute(
     onOpenClient: (String) -> Unit,
     onOpenSummary: () -> Unit,
     onAddClients: () -> Unit,
+    onTakeOrderNewClient: () -> Unit,
 ) {
     val viewModel: RouteSheetViewModel = viewModel(factory = ControllerFactories.routeSheet(container))
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -160,6 +164,7 @@ fun RouteSheetRoute(
                 onDismissNextClientSuggestion = viewModel::onDismissNextClientSuggestion,
                 onBadgesAcknowledged = viewModel::onBadgesAcknowledged,
                 onUpdateClicked = updateViewModel::onUpdateClicked,
+                onTakeOrderNewClient = onTakeOrderNewClient,
             ),
             isLightMode = isLightMode,
         )
@@ -205,7 +210,7 @@ fun RouteSheetScreen(uiState: RouteSheetUiState, updateState: UpdateUiState, isL
             WTopBar(
                 title = uiState.userName.ifBlank { stringResource(R.string.route_title) },
                 subtitle = uiState.nowMillis.takeIf { it > 0L }?.let { TimeUtils.formatLongDate(it, zone) },
-                actions = { RouteSheetTopActions(isBusy = uiState.isShiftActionInProgress, isLightMode = isLightMode, actions = actions) },
+                actions = { RouteSheetTopActions(isVendor = uiState.isVendor, isBusy = uiState.isShiftActionInProgress, isLightMode = isLightMode, actions = actions) },
             )
         },
     ) { innerPadding ->
@@ -328,7 +333,16 @@ fun RouteSheetScreen(uiState: RouteSheetUiState, updateState: UpdateUiState, isL
 }
 
 @Composable
-private fun RouteSheetTopActions(isBusy: Boolean, isLightMode: Boolean, actions: RouteSheetActions) {
+private fun RouteSheetTopActions(isVendor: Boolean, isBusy: Boolean, isLightMode: Boolean, actions: RouteSheetActions) {
+    if (isVendor) {
+        IconButton(onClick = actions.onTakeOrderNewClient) {
+            Icon(
+                imageVector = Icons.Outlined.PersonAddAlt,
+                contentDescription = "Tomar pedido a cliente nuevo",
+                tint = WTheme.colors.accent,
+            )
+        }
+    }
     IconButton(onClick = actions.onToggleTheme) {
         Icon(
             imageVector = if (isLightMode) Icons.Outlined.DarkMode else Icons.Outlined.LightMode, 
@@ -377,6 +391,11 @@ private fun RouteSheetBody(
         item(key = "shift") {
             ShiftControlCard(activeShiftStartedAtMillis = uiState.activeShiftStartedAtMillis, nowMillis = uiState.nowMillis)
         }
+        if (uiState.isVendor) {
+            item(key = "new_client_order_card") {
+                NewClientOrderCard(onClick = actions.onTakeOrderNewClient)
+            }
+        }
         routeContent(uiState = uiState, actions = actions, isLightMode = isLightMode, mapState = mapState, onOpenFullScreenMap = onOpenFullScreenMap)
         item(key = "finish_route") {
             FinishRouteButton(
@@ -404,11 +423,24 @@ private fun LazyListScope.routeContent(uiState: RouteSheetUiState, actions: Rout
                     title = stringResource(R.string.route_empty_title),
                     message = stringResource(R.string.route_empty_message),
                     action = {
-                        WButton(
-                            text = stringResource(R.string.route_empty_action),
-                            onClick = actions.onAddClients,
-                            leadingIcon = Icons.Outlined.AddBusiness,
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(WTheme.spacing.sm),
+                        ) {
+                            WButton(
+                                text = stringResource(R.string.route_empty_action),
+                                onClick = actions.onAddClients,
+                                leadingIcon = Icons.Outlined.AddBusiness,
+                            )
+                            if (uiState.isVendor) {
+                                WButton(
+                                    text = "Tomar pedido a cliente nuevo",
+                                    onClick = actions.onTakeOrderNewClient,
+                                    variant = WButtonVariant.SECONDARY,
+                                    leadingIcon = Icons.Outlined.PersonAddAlt,
+                                )
+                            }
+                        }
                     },
                 )
             }

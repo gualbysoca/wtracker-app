@@ -30,6 +30,9 @@ import com.wtracker.field.BuildConfig
 import com.wtracker.field.services.update.ApkInstaller
 import com.wtracker.field.services.update.UpdateHttpClient
 import com.wtracker.field.services.update.UpdateService
+import com.wtracker.field.services.woocommerce.DefaultWooCommerceService
+import com.wtracker.field.services.woocommerce.RetrofitWooCommerceClient
+import com.wtracker.field.services.woocommerce.WooCommerceService
 import java.io.File
 
 /**
@@ -68,6 +71,21 @@ class AppContainer(context: Context) {
     val evidenceStamper by lazy { EvidenceStamper(evidenceFileStore, timeProvider) }
 
     val authService by lazy { AuthService(api, sessionStore, syncScheduler, errorMapper) }
+
+    val wooCommerceService: WooCommerceService by lazy {
+        val client = RetrofitWooCommerceClient.create(json = json)
+        DefaultWooCommerceService(client)
+    }
+
+    val orderConfirmationStore by lazy { com.wtracker.field.services.woocommerce.OrderConfirmationStore() }
+
+    val orderEvidenceGenerator by lazy {
+        com.wtracker.field.services.woocommerce.OrderEvidenceGenerator(
+            fileStore = evidenceFileStore,
+            locationProvider = locationProvider,
+            timeProvider = timeProvider,
+        )
+    }
 
     val clientService by lazy {
         ClientService(

@@ -64,6 +64,7 @@ data class VisitCaptureActions(
     val onSubmit: () -> Unit,
     val onConfirmSubmit: () -> Unit,
     val onDismissWarning: () -> Unit,
+    val onTakeOrder: () -> Unit = {},
 )
 
 @Composable
@@ -72,6 +73,7 @@ fun VisitCaptureRoute(
     clientId: String,
     onOpenCamera: () -> Unit,
     onFinished: () -> Unit,
+    onTakeOrder: () -> Unit = {},
 ) {
     val viewModel: VisitCaptureViewModel = viewModel(factory = ControllerFactories.visitCapture(container, clientId))
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -95,18 +97,28 @@ fun VisitCaptureRoute(
             onSubmit = viewModel::onSubmit,
             onConfirmSubmit = viewModel::onConfirmSubmit,
             onDismissWarning = viewModel::onDismissWarning,
+            onTakeOrder = onTakeOrder,
         ),
     )
 }
 
 @Composable
 fun VisitCaptureScreen(uiState: VisitCaptureUiState, actions: VisitCaptureActions) {
+    val client = uiState.client
+    val topBarSubtitle = if (client != null) {
+        val contact = client.contactName?.takeIf { it.isNotBlank() } ?: client.businessName
+        val code = client.clientCode?.takeIf { it.isNotBlank() }
+        if (code != null) "$contact - $code" else contact
+    } else {
+        null
+    }
+
     Scaffold(
         containerColor = WTheme.colors.background,
         topBar = {
             WTopBar(
                 title = stringResource(R.string.visit_title),
-                subtitle = uiState.client?.businessName,
+                subtitle = topBarSubtitle,
                 onBack = actions.onBack,
             )
         },
@@ -161,7 +173,11 @@ private fun VisitCaptureBody(uiState: VisitCaptureUiState, actions: VisitCapture
             .padding(horizontal = spacing.lg, vertical = spacing.md),
         verticalArrangement = Arrangement.spacedBy(spacing.lg),
     ) {
-        ClientInfoCard(client = client)
+        ClientInfoCard(
+            client = client,
+            isVendor = uiState.isVendor,
+            onTakeOrder = actions.onTakeOrder,
+        )
 
         SectionHeader(title = stringResource(R.string.visit_section_status))
         StatusSelector(

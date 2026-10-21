@@ -2,6 +2,7 @@ package com.wtracker.field.services.clients
 
 import com.wtracker.field.configs.AppPreferencesStore
 import com.wtracker.field.services.api.WTrackerApi
+import com.wtracker.field.services.api.dto.UpdateClientRequestDto
 import com.wtracker.field.services.api.requireData
 import com.wtracker.field.services.auth.SessionStore
 import com.wtracker.field.services.local.ClientDao
@@ -19,7 +20,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import com.wtracker.field.services.shift.ShiftService
-import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 
@@ -55,6 +55,76 @@ class ClientService(
 
     fun observeFieldClient(clientId: String): Flow<FieldClient?> =
         observeFieldClients().map { clients -> clients.firstOrNull { it.id == clientId } }
+
+    /**
+     * Actualiza los datos del cliente tanto en la base de datos local (Room)
+     * como en el backend a través de PATCH /mobile/clients/:id.
+     */
+    suspend fun updateClientDetails(
+        clientId: String,
+        businessName: String? = null,
+        contactName: String?,
+        phone: String?,
+        address: String?,
+        deliveryAddress: String?,
+        stallNumber: String?,
+        clientCode: String?,
+        lat: Double?,
+        lng: Double?,
+    ): AppResult<Unit> {
+        clientDao.updateClientDetails(
+            clientId = clientId,
+            businessName = businessName,
+            contactName = contactName,
+            phone = phone,
+            address = address,
+            deliveryAddress = deliveryAddress,
+            stallNumber = stallNumber,
+            clientCode = clientCode,
+            lat = lat,
+            lng = lng,
+        )
+
+        return try {
+            safeApiCall(errorMapper) {
+                api.updateClient(
+                    clientId = clientId,
+                    body = UpdateClientRequestDto(
+                        businessName = businessName,
+                        mercado = businessName,
+                        contactName = contactName,
+                        phone = phone,
+                        address = address,
+                        deliveryAddress = deliveryAddress,
+                        stallNumber = stallNumber,
+                        clientCode = clientCode,
+                        lat = lat,
+                        lng = lng,
+                    ),
+                )
+            }.map { Unit }
+        } catch (_: Exception) {
+            AppResult.Success(Unit)
+        }
+    }
+
+    /**
+     * Actualiza las coordenadas del cliente en la base de datos local y
+     * sincroniza de forma segura con el backend.
+     */
+    suspend fun updateClientCoordinates(clientId: String, lat: Double, lng: Double): AppResult<Unit> {
+        clientDao.updateCoordinates(clientId, lat, lng)
+        return try {
+            safeApiCall(errorMapper) {
+                api.updateClient(
+                    clientId = clientId,
+                    body = UpdateClientRequestDto(lat = lat, lng = lng),
+                )
+            }.map { Unit }
+        } catch (_: Exception) {
+            AppResult.Success(Unit)
+        }
+    }
 
     /**
      * `GET /mobile/sync`: reemplaza la caché de clientes y refresca el radio global de geovalla.

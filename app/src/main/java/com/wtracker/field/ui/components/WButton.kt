@@ -49,30 +49,34 @@ fun WButton(
     leadingIcon: ImageVector? = null,
     isLoading: Boolean = false,
     enabled: Boolean = true,
+    onClickDisabled: (() -> Unit)? = null,
 ) {
     val buttonColors = resolveButtonColors(variant)
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) WTheme.alpha.pressedScale else 1f,
+        targetValue = if (isPressed && enabled) WTheme.alpha.pressedScale else 1f,
         label = "buttonPressScale",
     )
 
+    val effectivelyEnabled = (enabled || onClickDisabled != null) && !isLoading
+    val actualClick = if (enabled) onClick else (onClickDisabled ?: {})
+
     Button(
-        onClick = onClick,
+        onClick = actualClick,
         modifier = modifier
             .heightIn(min = WTheme.sizes.touchTarget)
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
             },
-        enabled = enabled && !isLoading,
+        enabled = effectivelyEnabled,
         shape = RoundedCornerShape(WTheme.radius.md),
         interactionSource = interactionSource,
         contentPadding = PaddingValues(horizontal = WTheme.spacing.lg, vertical = WTheme.spacing.md),
         colors = ButtonDefaults.buttonColors(
-            containerColor = buttonColors.container,
-            contentColor = buttonColors.content,
+            containerColor = if (enabled) buttonColors.container else buttonColors.container.copy(alpha = WTheme.alpha.disabled),
+            contentColor = if (enabled) buttonColors.content else buttonColors.content.copy(alpha = WTheme.alpha.disabled),
             disabledContainerColor = buttonColors.container.copy(alpha = WTheme.alpha.disabled),
             disabledContentColor = buttonColors.content.copy(alpha = WTheme.alpha.disabled),
         ),

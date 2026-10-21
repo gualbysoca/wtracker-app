@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wtracker.field.configs.AppPreferencesStore
 import com.wtracker.field.configs.UiConfig
+import com.wtracker.field.configs.WooCommerceConfig
 import com.wtracker.field.services.auth.SessionExitService
 import com.wtracker.field.services.auth.SessionStore
 import com.wtracker.field.services.clients.ClientService
@@ -40,6 +41,7 @@ import kotlinx.coroutines.launch
 
 data class RouteSheetUiState(
     val userName: String = "",
+    val isVendor: Boolean = false,
     val nowMillis: Long = 0L,
     val isInitialLoading: Boolean = true,
     val isRefreshing: Boolean = false,
@@ -146,8 +148,10 @@ class RouteSheetViewModel(
         sessionAndSettingsFlow,
     ) { stops, local, status, sessionAndSettings ->
         val (session, settings) = sessionAndSettings
+        val isVendor = session?.role.equals(WooCommerceConfig.REQUIRED_VENDOR_ROLE, ignoreCase = true)
         RouteSheetUiState(
             userName = session?.fullName.orEmpty(),
+            isVendor = isVendor,
             nowMillis = status.nowMillis,
             isInitialLoading = stops.isEmpty() && !local.hasCompletedFirstLoad,
             isRefreshing = local.isRefreshing,

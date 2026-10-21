@@ -22,6 +22,8 @@
     <string name="action_navigate">Ir</string>
     <string name="action_call">Llamar</string>
     <string name="action_whatsapp">Escribir</string>
+    <string name="action_take_order">Tomar Pedido</string>
+    <string name="action_take_order_short">Pedido</string>
 
     <!-- Estados de visita -->
     <string name="status_pending">Pendiente</string>
@@ -199,4 +201,34 @@
 
     <string name="summary_section_stops">Paradas e inactividad</string>
     <string name="summary_stops_empty">No se registraron paradas prolongadas.</string>
+
+    <!-- Pedidos WooCommerce -->
+    <string name="order_title">Tomar Pedido</string>
+    <string name="order_search_placeholder">Buscar productos o categoría…</string>
+    <string name="order_category_all">Todos</string>
+    <string name="order_header_products">Productos</string>
+    <string name="order_header_quantity">Cant.</string>
+    <string name="order_in_cart_badge">En pedido: %1$d</string>
+    <string name="order_empty_catalog_title">Sin productos disponibles</string>
+    <string name="order_empty_catalog_message">No se encontraron productos en la tienda WooCommerce.</string>
+    <string name="order_empty_search_title">Sin coincidencias</string>
+    <string name="order_empty_search_message">No hay productos que coincidan con tu búsqueda.</string>
+    <string name="order_loading_catalog">Cargando catálogo de productos…</string>
+    <string name="order_submitting">Registrando pedido en WooCommerce…</string>
+    <string name="order_notes_label">Observaciones del pedido (opcional)</string>
+    <string name="order_confirm_action">Confirmar Pedido</string>
+    <string name="order_checkout_action">Ir al Checkout</string>
+    <string name="order_checkout_submit">Enviar Pedido</string>
+    <string name="order_checkout_title">Checkout del Pedido</string>
+    <string name="order_checkout_subtitle">Verifica y completa los datos de entrega</string>
+    <string name="order_filter_cart">Carrito</string>
+    <string name="order_refresh_catalog">Actualizar catálogo</string>
+    <string name="order_items_count">%1$d productos</string>
+    <string name="order_total_label">Total a pagar:</string>
+    <string name="order_success_title">¡Pedido registrado!</string>
+    <string name="order_success_message">El pedido #%1$s fue creado exitosamente en WooCommerce.</string>
+    <string name="order_accept_action">Aceptar</string>
+    <string name="order_vendor_only_hint">Función disponible únicamente para vendedores autorizados.</string>
+    <string name="order_out_of_stock">Agotado</string>
+    <string name="order_in_stock">%1$d disp.</string>
 </resources>

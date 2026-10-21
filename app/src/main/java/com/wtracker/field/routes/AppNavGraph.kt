@@ -46,6 +46,7 @@ import com.wtracker.field.ui.screens.ClientPickerRoute
 import com.wtracker.field.ui.screens.LoginRoute
 import com.wtracker.field.ui.screens.RouteSheetRoute
 import com.wtracker.field.ui.screens.RouteWelcomeRoute
+import com.wtracker.field.ui.screens.OrderCreationRoute
 import com.wtracker.field.ui.screens.ShiftSummaryRoute
 import com.wtracker.field.ui.screens.VisitCaptureRoute
 
@@ -60,10 +61,15 @@ object AppDestinations {
     const val VISIT_PATTERN = "visit/{$ARG_CLIENT_ID}"
     const val CAMERA_PATTERN = "camera/{$ARG_CLIENT_ID}"
     const val CLIENT_PICKER_PATTERN = "client_picker/{$ARG_PICKER_MODE}"
+    const val ORDER_PATTERN = "order/{$ARG_CLIENT_ID}"
+
+    const val NEW_CLIENT_ID = "new_client"
 
     fun visit(clientId: String): String = "visit/$clientId"
     fun camera(clientId: String): String = "camera/$clientId"
     fun clientPicker(mode: ClientPickerMode): String = "client_picker/${mode.routeValue}"
+    fun order(clientId: String): String = "order/$clientId"
+    fun orderNewClient(): String = "order/$NEW_CLIENT_ID"
 }
 
 private val clientIdArguments = listOf(navArgument(AppDestinations.ARG_CLIENT_ID) { type = NavType.StringType })
@@ -143,6 +149,7 @@ private fun SessionAwareNavHost(container: AppContainer, rootDestination: String
             RouteWelcomeRoute(
                 container = container,
                 onAddClients = { navController.navigate(AppDestinations.clientPicker(ClientPickerMode.START_ROUTE)) },
+                onTakeOrderNewClient = { navController.navigate(AppDestinations.orderNewClient()) },
             )
         }
 
@@ -156,6 +163,7 @@ private fun SessionAwareNavHost(container: AppContainer, rootDestination: String
                     // Al iniciar ruta, el cambio de destino raíz ya lleva a la hoja de ruta; sólo "agregar" regresa.
                     if (mode == ClientPickerMode.ADD_TO_ROUTE) navController.popBackStack()
                 },
+                onTakeOrderNewClient = { navController.navigate(AppDestinations.orderNewClient()) },
             )
         }
 
@@ -165,6 +173,7 @@ private fun SessionAwareNavHost(container: AppContainer, rootDestination: String
                 onOpenClient = { clientId -> navController.navigate(AppDestinations.visit(clientId)) },
                 onOpenSummary = { navController.navigate(AppDestinations.SHIFT_SUMMARY) },
                 onAddClients = { navController.navigate(AppDestinations.clientPicker(ClientPickerMode.ADD_TO_ROUTE)) },
+                onTakeOrderNewClient = { navController.navigate(AppDestinations.orderNewClient()) },
             )
         }
 
@@ -175,6 +184,16 @@ private fun SessionAwareNavHost(container: AppContainer, rootDestination: String
                 clientId = clientId,
                 onOpenCamera = { navController.navigate(AppDestinations.camera(clientId)) },
                 onFinished = { navController.popBackStack() },
+                onTakeOrder = { navController.navigate(AppDestinations.order(clientId)) },
+            )
+        }
+
+        composable(AppDestinations.ORDER_PATTERN, arguments = clientIdArguments) { entry ->
+            val clientId = entry.arguments?.getString(AppDestinations.ARG_CLIENT_ID).orEmpty()
+            OrderCreationRoute(
+                container = container,
+                clientId = clientId,
+                onBack = { navController.popBackStack() },
             )
         }
 

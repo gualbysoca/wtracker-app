@@ -1,7 +1,7 @@
 {
-  "versionCode": 9,
-  "versionName": "1.0.8",
-  "apk": "wtracker-1.0.8.apk",
-  "sha256": "2a96c13516dfb17e41a06ac6a927bb16698132cf9ee4d39827da74dce9ca402f",
-  "notes": "Ahorro de bateria y error Paula arreglados"
+  "versionCode": 10,
+  "versionName": "1.1.0",
+  "apk": "wtracker-1.1.0.apk",
+  "sha256": "6fa1b633100fd3b9d231d0c2f65e82e3e6f8dde661ce346024418f9e7b8dc058",
+  "notes": "Tomador de pedidos en la app"
 }

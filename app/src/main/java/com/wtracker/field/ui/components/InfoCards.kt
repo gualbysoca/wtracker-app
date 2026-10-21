@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.Bedtime
 import androidx.compose.material.icons.outlined.Directions
 import androidx.compose.material.icons.outlined.Message
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.outlined.PauseCircle
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.PlainTooltip
@@ -150,7 +152,12 @@ fun StopEventRow(stopEvent: StopEvent, nowMillis: Long, zone: ZoneId, modifier: 
 }
 
 @Composable
-fun ClientInfoCard(client: FieldClient, modifier: Modifier = Modifier) {
+fun ClientInfoCard(
+    client: FieldClient,
+    modifier: Modifier = Modifier,
+    isVendor: Boolean = false,
+    onTakeOrder: (() -> Unit)? = null,
+) {
     val colors = WTheme.colors
     val context = LocalContext.current
     Surface(
@@ -174,11 +181,15 @@ fun ClientInfoCard(client: FieldClient, modifier: Modifier = Modifier) {
             }
             Spacer(Modifier.height(WTheme.spacing.md))
             InfoLine(icon = Icons.Outlined.Person, text = client.contactName?.takeIf { it.isNotBlank() } ?: stringResource(R.string.client_no_contact))
+            InfoLine(
+                icon = Icons.Outlined.Badge,
+                text = client.clientCode?.takeIf { it.isNotBlank() }?.let { "Cód. cliente: $it" } ?: "Cód. cliente: Sin asignar",
+            )
             InfoLine(icon = Icons.Outlined.Place, text = client.address ?: stringResource(R.string.client_no_address))
             client.phone?.let { InfoLine(icon = Icons.Outlined.Phone, text = it) }
 
             Spacer(Modifier.height(WTheme.spacing.md))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(WTheme.spacing.sm)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(WTheme.spacing.xs)) {
                 ClientActionButton(
                     text = stringResource(R.string.action_navigate),
                     icon = Icons.Outlined.Directions,
@@ -229,6 +240,13 @@ fun ClientInfoCard(client: FieldClient, modifier: Modifier = Modifier) {
                         }
                     },
                     enabled = client.phone != null,
+                    modifier = Modifier.weight(1f)
+                )
+                ClientActionButton(
+                    text = stringResource(R.string.action_take_order_short),
+                    icon = Icons.Outlined.ShoppingCart,
+                    onClick = { onTakeOrder?.invoke() },
+                    enabled = isVendor && onTakeOrder != null,
                     modifier = Modifier.weight(1f)
                 )
             }

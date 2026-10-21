@@ -58,6 +58,9 @@ data class FieldClient(
     val currentStatus: VisitStatus,
     val statusUpdatedAtMillis: Long?,
     val hasPendingSync: Boolean,
+    val clientCode: String? = null,
+    val deliveryAddress: String? = null,
+    val stallNumber: String? = null,
 )
 
 data class RouteStop(

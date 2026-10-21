@@ -18,6 +18,37 @@ abstract class ClientDao {
     @Query("SELECT * FROM clients WHERE id = :clientId LIMIT 1")
     abstract fun observeById(clientId: String): Flow<ClientEntity?>
 
+    @Query("UPDATE clients SET latitude = :lat, longitude = :lng WHERE id = :clientId")
+    abstract suspend fun updateCoordinates(clientId: String, lat: Double, lng: Double)
+
+    @Query(
+        """
+        UPDATE clients SET 
+            businessName = COALESCE(:businessName, businessName),
+            contactName = COALESCE(:contactName, contactName),
+            phone = COALESCE(:phone, phone),
+            address = COALESCE(:address, address),
+            deliveryAddress = COALESCE(:deliveryAddress, deliveryAddress),
+            stallNumber = COALESCE(:stallNumber, stallNumber),
+            clientCode = COALESCE(:clientCode, clientCode),
+            latitude = COALESCE(:lat, latitude),
+            longitude = COALESCE(:lng, longitude)
+        WHERE id = :clientId
+        """
+    )
+    abstract suspend fun updateClientDetails(
+        clientId: String,
+        businessName: String?,
+        contactName: String?,
+        phone: String?,
+        address: String?,
+        deliveryAddress: String?,
+        stallNumber: String?,
+        clientCode: String?,
+        lat: Double?,
+        lng: Double?,
+    )
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     protected abstract suspend fun insertAll(clients: List<ClientEntity>)
 

@@ -27,6 +27,7 @@ object ControllerFactories {
                 clientService = container.clientService,
                 routePlanService = container.routePlanService,
                 timeProvider = container.timeProvider,
+                sessionStore = container.sessionStore,
             )
         }
     }
@@ -58,6 +59,23 @@ object ControllerFactories {
                 evidenceDraftStore = container.evidenceDraftStore,
                 clientService = container.clientService,
                 appPreferencesStore = container.appPreferencesStore,
+                sessionStore = container.sessionStore,
+                orderConfirmationStore = container.orderConfirmationStore,
+            )
+        }
+    }
+
+    fun orderCreation(container: AppContainer, clientId: String): ViewModelProvider.Factory = viewModelFactory {
+        initializer {
+            OrderCreationViewModel(
+                clientId = clientId,
+                clientService = container.clientService,
+                sessionStore = container.sessionStore,
+                wooCommerceService = container.wooCommerceService,
+                evidenceDraftStore = container.evidenceDraftStore,
+                orderConfirmationStore = container.orderConfirmationStore,
+                orderEvidenceGenerator = container.orderEvidenceGenerator,
+                locationProvider = container.locationProvider,
             )
         }
     }

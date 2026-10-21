@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import com.wtracker.field.configs.WooCommerceConfig
+import com.wtracker.field.services.auth.SessionStore
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -48,6 +50,7 @@ data class ClientPickerUiState(
     val startConfirmation: RouteStartConfirmation? = null,
     val isSubmitting: Boolean = false,
     val transientMessage: String? = null,
+    val isVendor: Boolean = false,
 ) {
     val canSubmit: Boolean get() = selectedCount > 0 && !isSubmitting
 }
@@ -73,6 +76,7 @@ class ClientPickerViewModel(
     private val clientService: ClientService,
     private val routePlanService: RoutePlanService,
     private val timeProvider: TimeProvider,
+    sessionStore: SessionStore,
 ) : ViewModel() {
 
     private val localState = MutableStateFlow(ClientPickerLocalState())
@@ -82,14 +86,16 @@ class ClientPickerViewModel(
     val uiState: StateFlow<ClientPickerUiState> = combine(
         clientService.observeFieldClients(),
         routePlanService.observeActiveRoute(),
+        sessionStore.sessionFlow,
         localState,
-    ) { clients, activeRoute, local ->
+    ) { clients, activeRoute, session, local ->
         // Al agregar en caliente, los clientes que ya están en la ruta no se vuelven a ofrecer.
         val clientIdsAlreadyInRoute = if (mode == ClientPickerMode.ADD_TO_ROUTE) activeRoute?.clientIds.orEmpty() else emptySet()
         val availableClients = clients.filterNot { it.id in clientIdsAlreadyInRoute }
         val visibleClients = availableClients.filter { client ->
             TextSearch.matches(local.searchQuery, client.businessName, client.address, client.contactName)
         }
+        val isVendor = session?.role.equals(WooCommerceConfig.REQUIRED_VENDOR_ROLE, ignoreCase = true)
 
         ClientPickerUiState(
             mode = mode,
@@ -104,6 +110,7 @@ class ClientPickerViewModel(
             startConfirmation = local.startConfirmation,
             isSubmitting = local.isSubmitting,
             transientMessage = local.transientMessage,
+            isVendor = isVendor,
         )
     }.stateIn(
         viewModelScope,

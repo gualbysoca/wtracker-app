@@ -11,6 +11,13 @@ plugins {
 val defaultApiBaseUrl = "https://alimentaria.simpler.bo/api/v1/"
 val apiBaseUrl: String = (project.findProperty("wtracker.apiBaseUrl") as String?) ?: defaultApiBaseUrl
 
+val defaultWooCommerceBaseUrl = "https://mobarmy.dev/alimentaria/"
+val wooCommerceBaseUrl: String = (project.findProperty("woocommerce.baseUrl") as String?) ?: defaultWooCommerceBaseUrl
+val defaultWooCommerceConsumerKey = "ck_92642c263cc189744202ba5796fa67a165da99bb"
+val wooCommerceConsumerKey: String = (project.findProperty("woocommerce.consumerKey") as String?) ?: defaultWooCommerceConsumerKey
+val defaultWooCommerceConsumerSecret = "cs_f13ee32a9ff55bea870b5c0ac59a3ee01f8e19ad"
+val wooCommerceConsumerSecret: String = (project.findProperty("woocommerce.consumerSecret") as String?) ?: defaultWooCommerceConsumerSecret
+
 // Credenciales de firma: viven fuera del repo (keystore.properties está en .gitignore).
 val keystoreProperties = Properties().apply {
     val file = rootProject.file("keystore.properties")
@@ -25,10 +32,13 @@ android {
         applicationId = "com.wtracker.field"
         minSdk = 26
         targetSdk = 35
-        versionCode = 9
-        versionName = "1.0.8"
+        versionCode = 10
+        versionName = "1.1.0"
 
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
+        buildConfigField("String", "WOOCOMMERCE_BASE_URL", "\"$wooCommerceBaseUrl\"")
+        buildConfigField("String", "WOOCOMMERCE_CONSUMER_KEY", "\"$wooCommerceConsumerKey\"")
+        buildConfigField("String", "WOOCOMMERCE_CONSUMER_SECRET", "\"$wooCommerceConsumerSecret\"")
     }
 
     signingConfigs {

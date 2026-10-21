@@ -27,9 +27,14 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+import com.wtracker.field.services.auth.SessionStore
+import com.wtracker.field.configs.WooCommerceConfig
+import com.wtracker.field.services.woocommerce.OrderConfirmationStore
+
 data class VisitCaptureUiState(
     val isLoading: Boolean = true,
     val client: FieldClient? = null,
+    val isVendor: Boolean = false,
     val selectedStatus: VisitStatus? = null,
     val evidence: CapturedEvidence? = null,
     val notes: String = "",
@@ -81,23 +86,48 @@ class VisitCaptureViewModel(
     private val evidenceDraftStore: EvidenceDraftStore,
     clientService: ClientService,
     private val appPreferencesStore: AppPreferencesStore,
+    private val sessionStore: SessionStore,
+    private val orderConfirmationStore: OrderConfirmationStore,
 ) : ViewModel() {
 
     private val formState = MutableStateFlow(VisitFormState())
     private val eventChannel = Channel<VisitCaptureEvent>(Channel.BUFFERED)
     val events: Flow<VisitCaptureEvent> = eventChannel.receiveAsFlow()
 
-    val uiState: StateFlow<VisitCaptureUiState> = combine(
+    init {
+        viewModelScope.launch {
+            orderConfirmationStore.observeConfirmation(clientId).collect { confirmation ->
+                if (confirmation != null) {
+                    formState.update { current ->
+                        current.copy(
+                            selectedStatus = VisitStatus.VISITED,
+                            notes = confirmation.notesText,
+                            errorMessage = null,
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private val clientAndSessionFlow = combine(
         clientService.observeFieldClient(clientId),
+        sessionStore.sessionFlow,
+    ) { client, session -> client to session }
+
+    val uiState: StateFlow<VisitCaptureUiState> = combine(
+        clientAndSessionFlow,
         evidenceDraftStore.observeDraft(clientId),
         formState,
         clientService.observeFieldClients(),
         appPreferencesStore.businessSettingsFlow,
-    ) { client, evidence, form, allClients, settings ->
+    ) { (client, session), evidence, form, allClients, settings ->
         val hasOtherEnRoute = allClients.any { it.currentStatus == VisitStatus.EN_ROUTE && it.id != clientId }
+        val isVendor = session?.role.equals(WooCommerceConfig.REQUIRED_VENDOR_ROLE, ignoreCase = true)
         VisitCaptureUiState(
             isLoading = false,
             client = client,
+            isVendor = isVendor,
             selectedStatus = form.selectedStatus ?: client?.currentStatus?.takeIf { it in VisitStatus.markableStatuses },
             evidence = evidence,
             notes = form.notes,
@@ -119,6 +149,7 @@ class VisitCaptureViewModel(
 
     fun onDiscardEvidence() {
         evidenceDraftStore.discardDraft(clientId)
+        orderConfirmationStore.clearConfirmation(clientId)
     }
 
     fun onSubmit() {
@@ -165,6 +196,7 @@ class VisitCaptureViewModel(
                 is AppResult.Success -> {
                     // La foto pasa a ser propiedad de la cola de sincronización.
                     evidenceDraftStore.releaseDraft(clientId)
+                    orderConfirmationStore.clearConfirmation(clientId)
                     formState.update { it.copy(isSubmitting = false, isSubmitted = true) }
                     eventChannel.send(VisitCaptureEvent.Completed)
                 }
@@ -182,8 +214,12 @@ class VisitCaptureViewModel(
     }
 
     override fun onCleared() {
-        // Si el usuario abandona sin registrar, la foto no debe quedar huérfana en el equipo.
-        if (!formState.value.isSubmitted) evidenceDraftStore.discardDraft(clientId)
+        // Si el usuario abandona sin registrar, la foto no debe quedar huérfana en el equipo,
+        // a menos que sea un comprobante de pedido pendiente de confirmación.
+        val hasOrder = orderConfirmationStore.getConfirmation(clientId) != null
+        if (!formState.value.isSubmitted && !hasOrder) {
+            evidenceDraftStore.discardDraft(clientId)
+        }
         super.onCleared()
     }
 }

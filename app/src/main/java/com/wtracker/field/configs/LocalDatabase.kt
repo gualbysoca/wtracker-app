@@ -32,7 +32,7 @@ import com.wtracker.field.services.local.VisitRecordEntity
         StopEventEntity::class,
         PlannedVisitEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = false,
 )
 abstract class LocalDatabase : RoomDatabase() {
@@ -49,7 +49,11 @@ abstract class LocalDatabase : RoomDatabase() {
 
         fun build(context: Context): LocalDatabase =
             Room.databaseBuilder(context.applicationContext, LocalDatabase::class.java, DATABASE_NAME)
-                .addMigrations(LocalMigrations.MIGRATION_1_2, LocalMigrations.MIGRATION_2_3)
+                .addMigrations(
+                    LocalMigrations.MIGRATION_1_2,
+                    LocalMigrations.MIGRATION_2_3,
+                    LocalMigrations.MIGRATION_3_4,
+                )
                 .build()
     }
 }
@@ -88,6 +92,15 @@ internal object LocalMigrations {
             )
             db.execSQL("DROP TABLE `clients`")
             db.execSQL("ALTER TABLE `clients_new` RENAME TO `clients`")
+        }
+    }
+
+    /** v4: clientCode, deliveryAddress y stallNumber en clientes para toma de pedidos. */
+    val MIGRATION_3_4 = object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `clients` ADD COLUMN `clientCode` TEXT")
+            db.execSQL("ALTER TABLE `clients` ADD COLUMN `deliveryAddress` TEXT")
+            db.execSQL("ALTER TABLE `clients` ADD COLUMN `stallNumber` TEXT")
         }
     }
 }

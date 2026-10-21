@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.outlined.AddBusiness
+import androidx.compose.material.icons.outlined.PersonAddAlt
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Event
@@ -81,7 +82,11 @@ import java.time.format.DateTimeFormatter
  * porque iniciar la ruta arranca el servicio GPS en primer plano.
  */
 @Composable
-fun RouteWelcomeRoute(container: AppContainer, onAddClients: () -> Unit) {
+fun RouteWelcomeRoute(
+    container: AppContainer,
+    onAddClients: () -> Unit,
+    onTakeOrderNewClient: () -> Unit = {},
+) {
     val viewModel: RouteWelcomeViewModel = viewModel(factory = ControllerFactories.routeWelcome(container))
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val updateViewModel: UpdateViewModel = viewModel(factory = ControllerFactories.update(container))
@@ -99,6 +104,7 @@ fun RouteWelcomeRoute(container: AppContainer, onAddClients: () -> Unit) {
             updateState = updateState,
             onUpdateClicked = updateViewModel::onUpdateClicked,
             onAddClients = onAddClients,
+            onTakeOrderNewClient = onTakeOrderNewClient,
             onLogout = viewModel::onLogout,
             onDismissSummary = viewModel::onDismissSummary
         )
@@ -111,6 +117,7 @@ fun RouteWelcomeScreen(
     updateState: UpdateUiState,
     onUpdateClicked: () -> Unit,
     onAddClients: () -> Unit,
+    onTakeOrderNewClient: () -> Unit = {},
     onLogout: () -> Unit,
     onDismissSummary: (String) -> Unit
 ) {
@@ -140,6 +147,16 @@ fun RouteWelcomeScreen(
                 enabled = !uiState.isLoggingOut,
                 modifier = Modifier.fillMaxWidth(),
             )
+            if (uiState.isVendor) {
+                WButton(
+                    text = "Pedido a cliente nuevo",
+                    onClick = onTakeOrderNewClient,
+                    variant = WButtonVariant.SECONDARY,
+                    leadingIcon = Icons.Outlined.PersonAddAlt,
+                    enabled = !uiState.isLoggingOut,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
             WButton(
                 text = stringResource(R.string.action_logout),
                 onClick = onLogout,

@@ -8,6 +8,7 @@ import com.wtracker.field.services.auth.AuthService
 import com.wtracker.field.services.auth.SessionStore
 import com.wtracker.field.services.models.ShiftSummary
 import com.wtracker.field.services.shift.ShiftService
+import com.wtracker.field.configs.WooCommerceConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +20,7 @@ data class RouteWelcomeUiState(
     val userName: String = "",
     val isLoggingOut: Boolean = false,
     val recentCompletedSummary: ShiftSummary? = null,
+    val isVendor: Boolean = false,
 )
 
 /** Pantalla de entrada cuando el trabajador aún no inició su ruta del día. */
@@ -38,10 +40,12 @@ class RouteWelcomeViewModel(
         appPreferencesStore.lastSeenSummaryIdFlow
     ) { session, loggingOut, summary, lastSeenId ->
         val showSummary = summary != null && !summary.isActive && summary.shiftId != lastSeenId
+        val isVendor = session?.role.equals(WooCommerceConfig.REQUIRED_VENDOR_ROLE, ignoreCase = true)
         RouteWelcomeUiState(
             userName = session?.fullName.orEmpty(),
             isLoggingOut = loggingOut,
             recentCompletedSummary = if (showSummary) summary else null,
+            isVendor = isVendor,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(UiConfig.STATE_SUBSCRIPTION_TIMEOUT_MS), RouteWelcomeUiState())
 

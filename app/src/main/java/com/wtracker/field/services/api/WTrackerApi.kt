@@ -12,6 +12,7 @@ import com.wtracker.field.services.api.dto.RefreshRequestDto
 import com.wtracker.field.services.api.dto.RefreshResponseDto
 import com.wtracker.field.services.api.dto.SettingsDto
 import com.wtracker.field.services.api.dto.ShiftRequestDto
+import com.wtracker.field.services.api.dto.UpdateClientRequestDto
 import com.wtracker.field.services.api.dto.VisitResponseDto
 import kotlinx.serialization.json.JsonElement
 import okhttp3.MultipartBody
@@ -20,6 +21,7 @@ import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Multipart
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
@@ -62,6 +64,18 @@ interface WTrackerApi {
 
     @POST(ApiPaths.MOBILE_LOCATIONS)
     suspend fun uploadLocations(@Body body: List<com.wtracker.field.services.api.dto.LocationPingDto>): ApiEnvelopeDto<JsonElement>
+
+    @POST("mobile/clients/{id}/location")
+    suspend fun updateClientLocation(
+        @Path("id") clientId: String,
+        @Body body: com.wtracker.field.services.api.dto.ClientLocationUpdateDto,
+    ): ApiEnvelopeDto<JsonElement>
+
+    @PATCH("mobile/clients/{id}")
+    suspend fun updateClient(
+        @Path("id") clientId: String,
+        @Body body: UpdateClientRequestDto,
+    ): ApiEnvelopeDto<JsonElement>
 }
 
 /**

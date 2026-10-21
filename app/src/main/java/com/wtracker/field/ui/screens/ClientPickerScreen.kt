@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SearchOff
+import androidx.compose.material.icons.outlined.PersonAddAlt
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
@@ -56,6 +57,7 @@ import com.wtracker.field.ui.components.LoadingState
 import com.wtracker.field.ui.components.SelectableClientCard
 import com.wtracker.field.ui.components.StartRouteDialog
 import com.wtracker.field.ui.components.WTextField
+import com.wtracker.field.ui.components.WButton
 import com.wtracker.field.ui.components.WTopBar
 import com.wtracker.field.ui.theme.WTheme
 import java.time.ZoneId
@@ -70,6 +72,7 @@ data class ClientPickerActions(
     val onStartConfirmed: () -> Unit,
     val onStartDismissed: () -> Unit,
     val onTransientMessageShown: () -> Unit,
+    val onTakeOrderNewClient: () -> Unit,
 )
 
 @Composable
@@ -78,6 +81,7 @@ fun ClientPickerRoute(
     mode: ClientPickerMode,
     onBack: () -> Unit,
     onCompleted: () -> Unit,
+    onTakeOrderNewClient: () -> Unit = {},
 ) {
     val viewModel: ClientPickerViewModel = viewModel(factory = ControllerFactories.clientPicker(container, mode))
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -102,6 +106,7 @@ fun ClientPickerRoute(
             onStartConfirmed = viewModel::onStartRouteConfirmed,
             onStartDismissed = viewModel::onStartConfirmationDismissed,
             onTransientMessageShown = viewModel::onTransientMessageShown,
+            onTakeOrderNewClient = onTakeOrderNewClient,
         ),
     )
 }
@@ -159,6 +164,15 @@ private fun ClientPickerTopBar(uiState: ClientPickerUiState, actions: ClientPick
             subtitle = subtitle,
             onBack = actions.onBack,
             actions = {
+                if (uiState.isVendor) {
+                    IconButton(onClick = actions.onTakeOrderNewClient) {
+                        Icon(
+                            imageVector = Icons.Outlined.PersonAddAlt,
+                            contentDescription = "Tomar pedido a cliente nuevo",
+                            tint = WTheme.colors.accent,
+                        )
+                    }
+                }
                 IconButton(onClick = actions.onSearchToggled) {
                     Icon(
                         imageVector = if (uiState.isSearchVisible) Icons.Outlined.SearchOff else Icons.Outlined.Search,
@@ -263,6 +277,15 @@ private fun LazyListScope.pickerContent(uiState: ClientPickerUiState, actions: C
                     title = stringResource(R.string.picker_no_results_title),
                     message = stringResource(R.string.picker_no_results_message, uiState.searchQuery),
                     icon = Icons.Outlined.SearchOff,
+                    action = if (uiState.isVendor) {
+                        {
+                            WButton(
+                                text = "Tomar pedido a cliente nuevo",
+                                onClick = actions.onTakeOrderNewClient,
+                                leadingIcon = Icons.Outlined.PersonAddAlt,
+                            )
+                        }
+                    } else null,
                 )
             }
         }

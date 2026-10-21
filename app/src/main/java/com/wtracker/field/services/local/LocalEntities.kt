@@ -25,6 +25,9 @@ data class ClientEntity(
     val serverLastVisitStatus: String?,
     val serverLastVisitAtMillis: Long?,
     val downloadedAtMillis: Long,
+    val clientCode: String? = null,
+    val deliveryAddress: String? = null,
+    val stallNumber: String? = null,
 )
 
 /**

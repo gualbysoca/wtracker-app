@@ -20,6 +20,9 @@ internal fun MobileClientDto.toEntity(downloadedAtMillis: Long) = ClientEntity(
     serverLastVisitStatus = lastVisitStatus,
     serverLastVisitAtMillis = TimeUtils.parseIsoMillis(lastVisitAt),
     downloadedAtMillis = downloadedAtMillis,
+    clientCode = clientCode,
+    deliveryAddress = deliveryAddress,
+    stallNumber = stallNumber,
 )
 
 /**
@@ -39,6 +42,9 @@ internal fun ClientEntity.toFieldClient(latestTodayRecord: VisitRecordEntity?) =
     hasPendingSync = latestTodayRecord != null &&
         latestTodayRecord.syncState != SyncStates.SYNCED &&
         latestTodayRecord.syncState != SyncStates.REJECTED,
+    clientCode = clientCode,
+    deliveryAddress = deliveryAddress,
+    stallNumber = stallNumber,
 )
 
 private fun toCoordinateOrNull(latitude: Double?, longitude: Double?): GeoCoordinate? {
